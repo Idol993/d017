@@ -125,7 +125,7 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
                                  export_dir: str = "./exports/trace",
                                  release_id: Optional[str] = None,
                                  extra_files: Optional[Dict[str, str]] = None,
-                                 rollback_report: Optional[Dict] = None) -> Dict[str, str]:
+                                 rollback_result: Optional[Dict] = None) -> Dict[str, str]:
     """导出熔断回滚的完整链路包（ZIP 压缩包）。
 
     Args:
@@ -135,7 +135,8 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
         export_dir: 导出目录
         release_id: 发布单号
         extra_files: 额外需要打包的文件 {文件名: 文件路径}
-        rollback_report: 回滚报告 (包含开始/结束时间、版本、步骤结果、通知状态等)
+        rollback_result: 回滚完整结果 (RollbackExecutor.execute_rollback 返回)
+                         包含 report / rollback_steps / notify_results 三个一级键
 
     Returns:
         {格式: 文件路径} 字典，包含 zip 和单独的 trace json
@@ -147,11 +148,32 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
     export_files = {}
 
     rollback_info = None
-    if rollback_report:
-        start_ts = rollback_report.get("started_at") or rollback_report.get("created_at") or ""
-        end_ts = rollback_report.get("completed_at") or rollback_report.get("updated_at") or ""
-        duration_seconds = None
-        if start_ts and end_ts:
+    if rollback_result and isinstance(rollback_result, dict):
+        rb_report = rollback_result.get("report") or {}
+        rb_steps = rollback_result.get("rollback_steps") or []
+        rb_notify = rollback_result.get("notify_results") or []
+
+        if not rb_steps:
+            legacy_steps = rollback_result.get("steps") or {}
+            if isinstance(legacy_steps, dict):
+                for k, v in legacy_steps.items():
+                    if isinstance(v, dict):
+                        rb_steps.append({
+                            "name": v.get("message") or k,
+                            "status": v.get("status", "unknown"),
+                            "started_at": "",
+                            "completed_at": "",
+                            "error": v.get("error", ""),
+                        })
+
+        start_ts = (rb_report.get("rollback_started_at")
+                    or rb_report.get("started_at")
+                    or rb_report.get("created_at") or "")
+        end_ts = (rb_report.get("rollback_completed_at")
+                  or rb_report.get("completed_at")
+                  or rb_report.get("updated_at") or "")
+        duration_seconds = rb_report.get("duration_seconds")
+        if duration_seconds is None and start_ts and end_ts:
             try:
                 start_dt = datetime.fromisoformat(str(start_ts).replace("Z", "+00:00"))
                 end_dt = datetime.fromisoformat(str(end_ts).replace("Z", "+00:00"))
@@ -159,36 +181,52 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
             except Exception:
                 pass
 
-        steps = rollback_report.get("steps") or rollback_report.get("rollback_steps") or []
         step_summaries = []
-        for s in steps:
+        for s in rb_steps:
             step_summaries.append({
-                "name": s.get("name") or s.get("step_name") or "",
+                "name": s.get("name") or s.get("step_name") or s.get("message") or "",
+                "step_key": s.get("step_key") or "",
                 "status": s.get("status") or "",
                 "started_at": s.get("started_at") or s.get("start_time") or "",
                 "completed_at": s.get("completed_at") or s.get("end_time") or "",
                 "error": s.get("error") or "",
+                "message": s.get("message") or "",
             })
 
-        notifications = rollback_report.get("notifications") or rollback_report.get("notify_results") or []
+        notification_sent_flag = rb_report.get("notification_sent",
+                                               bool(rb_notify and any(n.get("success") for n in rb_notify)))
 
         rollback_info = {
             "rollback_started_at": start_ts,
             "rollback_completed_at": end_ts,
-            "rollback_version": rollback_report.get("version") or rollback_report.get("target_version") or "",
-            "rollback_from_version": rollback_report.get("from_version") or rollback_report.get("current_version") or "",
-            "rollback_to_version": rollback_report.get("to_version") or rollback_report.get("target_version") or "",
-            "rollback_reason": rollback_report.get("reason") or rollback_report.get("rollback_reason") or "",
-            "rollback_trigger": rollback_report.get("trigger") or rollback_report.get("triggered_by") or "",
+            "rollback_version": rb_report.get("version") or rb_report.get("target_version") or "",
+            "rollback_from_version": (rb_report.get("rollback_from_version")
+                                      or rb_report.get("from_version")
+                                      or rb_report.get("current_version") or ""),
+            "rollback_to_version": (rb_report.get("rollback_to_version")
+                                    or rb_report.get("to_version")
+                                    or rb_report.get("target_version") or ""),
+            "rollback_reason": (rb_report.get("reason")
+                                or rb_report.get("rollback_reason")
+                                or rollback_result.get("reason") or ""),
+            "rollback_trigger": (rb_report.get("trigger")
+                                 or rb_report.get("triggered_by")
+                                 or "circuit_breaker"),
+            "trigger_metric": rb_report.get("trigger_metric", ""),
+            "trigger_value": rb_report.get("trigger_value", 0),
+            "threshold": rb_report.get("threshold", 0),
             "duration_seconds": duration_seconds,
-            "overall_status": rollback_report.get("status") or rollback_report.get("rollback_status") or "",
+            "overall_status": (rb_report.get("status")
+                               or ("completed" if rollback_result.get("success") else "failed")),
+            "monitor_restarted": rb_report.get("monitor_restarted", False),
+            "notification_sent": notification_sent_flag,
             "step_count": len(step_summaries),
             "step_results": step_summaries,
             "notification_status": {
-                "total": len(notifications),
-                "success": sum(1 for n in notifications if n.get("success") or n.get("status") == "success"),
-                "failed": sum(1 for n in notifications if not n.get("success") and n.get("status") != "success"),
-                "details": notifications,
+                "total": len(rb_notify),
+                "success": sum(1 for n in rb_notify if n.get("success") or n.get("status") == "success"),
+                "failed": sum(1 for n in rb_notify if not n.get("success") and n.get("status") != "success"),
+                "details": rb_notify,
             },
         }
 
@@ -254,10 +292,12 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
         for s in rollback_info.get("step_results", []):
             rb_rows.append({
                 "release_id": rid,
+                "step_key": s.get("step_key", ""),
                 "step_name": s.get("name", ""),
                 "status": s.get("status", ""),
                 "started_at": s.get("started_at", ""),
                 "completed_at": s.get("completed_at", ""),
+                "message": s.get("message", ""),
                 "error": s.get("error", ""),
             })
         if rb_rows:
@@ -380,14 +420,14 @@ def _generate_trace_summary_md(release_id: str, trace_data: Dict, rollback_info:
         step_results = rollback_info.get("step_results", [])
         if step_results:
             lines.extend(["", "### 步骤详情", ""])
-            lines.append("| 步骤 | 状态 | 开始 | 结束 | 错误 |")
-            lines.append("|------|------|------|------|------|")
+            lines.append("| 步骤编码 | 步骤名 | 状态 | 开始时间 | 结束时间 | 结果说明 | 错误 |")
+            lines.append("|----------|--------|------|----------|----------|----------|------|")
             for s in step_results:
                 lines.append(
-                    f"| {s.get('name', '')} | {s.get('status', '')} | "
+                    f"| {s.get('step_key', '')} | {s.get('name', '')} | {s.get('status', '')} | "
                     f"{str(s.get('started_at', ''))[-8:]} | "
                     f"{str(s.get('completed_at', ''))[-8:]} | "
-                    f"{s.get('error', '')} |"
+                    f"{s.get('message', '')[:40]} | {s.get('error', '')} |"
                 )
         notif = rollback_info.get("notification_status", {})
         if notif:

@@ -121,13 +121,18 @@ def run_full_deploy(version: str, previous_version: str = "",
             logger.info("  发布单号:       %s", record.id)
             logger.info("  阻断阶段:       pre_check (准入前置校验)")
             logger.info("  阻断原因:       sample_data_error")
-            logger.info("  错误文件路径:   %s", sample_data_path)
+            logger.info("  用户输入路径:   %s", original_sample_path)
+            if resolved_sample_path:
+                logger.info("  解析后路径:     %s", resolved_sample_path)
+            elif sample_data_path:
+                logger.info("  尝试路径:       %s", sample_data_path)
             logger.info("  错误详情:       %s", load_error)
             logger.info("")
             logger.info("[FIX] 修复建议:")
             logger.info("  1. 运行 'python main.py sample list' 查看所有可用样例")
             logger.info("  2. 运行 'python main.py sample validate <文件名>' 校验格式")
             logger.info("  3. 确认 .yaml/.yml 文件是标准 YAML，.json 文件是标准 JSON")
+            logger.info("  4. 文件名可写: precheck_healthy.yaml (裸文件名) 或 ./sample_data/xxx.yaml (完整路径)")
             logger.info("=" * 60)
             return {
                 "success": False,
@@ -354,6 +359,8 @@ def run_full_deploy(version: str, previous_version: str = "",
             "blocked": True,
             "blocked_at": "grayscale",
             "blocked_reason": "circuit_breaker_triggered",
+            "monitor_exports": grayscale_result.get("monitor_exports", {}),
+            "cb_trace_files": grayscale_result.get("cb_trace_files", {}),
             "grayscale_result": grayscale_result,
         }
 
@@ -392,6 +399,8 @@ def run_full_deploy(version: str, previous_version: str = "",
         "version": version,
         "status": "deployed",
         "deployed_at": deploy_completed_at,
+        "monitor_exports": grayscale_result.get("monitor_exports", {}),
+        "cb_trace_files": grayscale_result.get("cb_trace_files", {}),
         "grayscale_result": grayscale_result,
     }
 

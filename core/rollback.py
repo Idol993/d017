@@ -35,11 +35,61 @@ class RollbackExecutor:
         rollback_start = time.time()
         start_time = datetime.now().isoformat()
 
+        rollback_steps = []
+        notify_results = []
+
         try:
+            s1_start = datetime.now().isoformat()
             step1_result = self._step_pause_deployment(release_id, version)
+            s1_end = datetime.now().isoformat()
+            rollback_steps.append({
+                "name": "暂停发布流程",
+                "step_key": "pause_deployment",
+                "started_at": s1_start,
+                "completed_at": s1_end,
+                "status": step1_result.get("status", "unknown"),
+                "message": step1_result.get("message", ""),
+                "error": "",
+            })
+
+            s2_start = datetime.now().isoformat()
             step2_result = self._step_switch_version(release_id, version, previous_version, target_parks)
+            s2_end = datetime.now().isoformat()
+            rollback_steps.append({
+                "name": "切换服务版本",
+                "step_key": "switch_version",
+                "started_at": s2_start,
+                "completed_at": s2_end,
+                "status": step2_result.get("status", "unknown"),
+                "message": step2_result.get("message", ""),
+                "error": "",
+            })
+
+            s3_start = datetime.now().isoformat()
             step3_result = self._step_restart_services(release_id, previous_version, target_parks)
+            s3_end = datetime.now().isoformat()
+            rollback_steps.append({
+                "name": "重启服务恢复监控",
+                "step_key": "restart_services",
+                "started_at": s3_start,
+                "completed_at": s3_end,
+                "status": step3_result.get("status", "unknown"),
+                "message": step3_result.get("message", ""),
+                "error": "",
+            })
+
+            s4_start = datetime.now().isoformat()
             step4_result = self._step_verify_rollback(release_id, previous_version, target_parks)
+            s4_end = datetime.now().isoformat()
+            rollback_steps.append({
+                "name": "回滚结果验证",
+                "step_key": "verify_rollback",
+                "started_at": s4_start,
+                "completed_at": s4_end,
+                "status": step4_result.get("status", "unknown"),
+                "message": step4_result.get("message", ""),
+                "error": "",
+            })
 
             rollback_end = time.time()
             end_time = datetime.now().isoformat()
@@ -62,12 +112,26 @@ class RollbackExecutor:
                 notification_sent=True,
             )
 
-            self.notifier.notify_rollback_completed(
-                release_id=release_id,
-                version=version,
-                rollback_version=previous_version,
-                duration=duration,
-            )
+            notify_ok = True
+            notify_err = ""
+            try:
+                self.notifier.notify_rollback_completed(
+                    release_id=release_id,
+                    version=version,
+                    rollback_version=previous_version,
+                    duration=duration,
+                )
+            except Exception as e:
+                notify_ok = False
+                notify_err = str(e)
+
+            notify_results.append({
+                "channel": "notifier.notify_rollback_completed",
+                "success": notify_ok,
+                "status": "success" if notify_ok else "failed",
+                "sent_at": datetime.now().isoformat(),
+                "error": notify_err,
+            })
 
             write_audit_log(
                 release_id=release_id,
@@ -92,6 +156,8 @@ class RollbackExecutor:
             return {
                 "success": True,
                 "report": report.to_dict(),
+                "rollback_steps": rollback_steps,
+                "notify_results": notify_results,
                 "steps": {
                     "pause_deployment": step1_result,
                     "switch_version": step2_result,
@@ -112,6 +178,17 @@ class RollbackExecutor:
             return {
                 "success": False,
                 "error": str(e),
+                "rollback_steps": rollback_steps,
+                "notify_results": notify_results,
+                "report": {
+                    "release_id": release_id,
+                    "reason": reason,
+                    "rollback_from_version": version,
+                    "rollback_to_version": previous_version,
+                    "rollback_started_at": start_time,
+                    "rollback_completed_at": datetime.now().isoformat(),
+                    "status": "failed",
+                },
             }
 
     def _step_pause_deployment(self, release_id: str, version: str) -> Dict:

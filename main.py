@@ -414,15 +414,21 @@ def main():
         epilog="""
 样例数据管理:
   python main.py sample list                                    列出本地样例数据文件
-  python main.py sample info precheck_healthy.yaml              查看样例详情
-  python main.py sample validate precheck_healthy.yaml          校验样例格式
+  python main.py sample info precheck_healthy.yaml              查看健康样例详情
+  python main.py sample info precheck_unhealthy.yaml            查看异常样例详情
+  python main.py sample validate precheck_unhealthy.yaml        校验异常样例格式
   python main.py sample dry-run precheck_healthy.yaml           只校验不发布(dry-run)
+  python main.py sample dry-run precheck_unhealthy.yaml         验证阻断逻辑
 
 发布流程:
   python main.py deploy --version 2.1.0 --previous-version 2.0.0 \\
       --branch release/2.1 --auto-approve
-  python main.py deploy --version 2.1.0 --sample-data ./sample_data/precheck_healthy.yaml \\
-      --demo-mode --auto-approve
+  python main.py deploy --version 2.1.0 \\
+      --sample-data precheck_healthy.yaml                        (裸文件名, 自动找 sample_data/ 目录)
+  python main.py deploy --version 2.1.0 \\
+      --sample-data ./sample_data/precheck_healthy.yaml         (完整相对路径)
+  python main.py deploy --version 2.1.0 --sample-data precheck_unhealthy.yaml \\
+      --demo-mode --auto-approve                                (传异常样例验证准入阻断)
   python main.py approve --release-id abc123 --approver-id pm001 --approve --comment "同意"
 
 回滚与演练:
@@ -432,7 +438,8 @@ def main():
 运营报表:
   python main.py report generate --date-preset this_week                        生成本周报表
   python main.py report generate --date-preset last_week --park-filter PK-CENTER-01
-  python main.py report generate --week-start 2026-06-01 --week-end 2026-06-30  自定义日期
+  python main.py report generate --date-preset custom --date-start 2026-06-01 \\
+      --date-end 2026-06-30                                                    自定义日期
   python main.py report query --query-type release --format json
   python main.py status --release-id abc123
         """,
@@ -452,7 +459,8 @@ def main():
     deploy_parser.add_argument("--grayscale-strategy", default="by_zone", help="灰度策略")
     deploy_parser.add_argument("--target-parks", nargs="*", default=[], help="目标园区")
     deploy_parser.add_argument("--auto-approve", action="store_true", help="自动审批(演示模式)")
-    deploy_parser.add_argument("--sample-data", default=None, help="前置校验样例数据文件路径 (.yaml/.json)")
+    deploy_parser.add_argument("--sample-data", default=None,
+        help="前置校验样例数据文件 (.yaml/.yml/.json)，支持裸文件名(自动搜索 sample_data 目录) 或路径")
     deploy_parser.add_argument("--demo-mode", action="store_true", help="演示模式(灰度监控间隔缩短)")
 
     # approve

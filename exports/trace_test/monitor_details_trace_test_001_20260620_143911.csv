@@ -1,0 +1,3 @@
+﻿release_id,phase_name,round_number,collected_at,metric_key,metric_name,value,threshold,unit,is_breach
+trace_test_001,测试阶段,1,2026-06-20T14:39:11.258251,入园失败率,入园失败率,0.01,0.05,ratio,False
+trace_test_001,测试阶段,2,2026-06-20T14:39:11.258256,入园失败率,入园失败率,0.087,0.05,ratio,True

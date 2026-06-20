@@ -1,0 +1,5 @@
+﻿release_id,step_key,step_name,status,started_at,completed_at,message,error
+trace_test_001,pause_deployment,暂停发布流程,completed,2026-06-20T14:38:30.298573,2026-06-20T14:38:30.798899,发布流程已暂停,
+trace_test_001,switch_version,切换服务版本,completed,2026-06-20T14:38:30.798924,2026-06-20T14:38:31.099003,版本已切换至 1.9.5,
+trace_test_001,restart_services,重启服务恢复监控,completed,2026-06-20T14:38:31.099034,2026-06-20T14:38:31.399585,服务重启完成，监控已恢复,
+trace_test_001,verify_rollback,回滚结果验证,completed,2026-06-20T14:38:31.399612,2026-06-20T14:38:31.899700,回滚验证通过,

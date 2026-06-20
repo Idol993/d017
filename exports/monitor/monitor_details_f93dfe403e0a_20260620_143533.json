@@ -1,0 +1,1314 @@
+{
+  "release_id": "f93dfe403e0a",
+  "exported_at": "2026-06-20T14:35:33.763987",
+  "snapshot_count": 36,
+  "round_range": {
+    "min_round": 1,
+    "max_round": 12
+  },
+  "phases_covered": [
+    "全量发布",
+    "核心枢纽园区-全区域",
+    "核心枢纽园区-室外区域",
+    "非核心园区-全区域",
+    "非核心园区-室外区域"
+  ],
+  "snapshots": [
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-室外区域",
+      "round_number": 1,
+      "collected_at": "2026-06-20T14:34:31.690743",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 1.13,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:31.690722"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.97,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:31.690730"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.49,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:31.690735"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-室外区域",
+      "round_number": 2,
+      "collected_at": "2026-06-20T14:34:33.692286",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.13,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:33.692248"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.01,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:33.692267"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.21,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:33.692274"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-室外区域",
+      "round_number": 3,
+      "collected_at": "2026-06-20T14:34:35.694133",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 0.98,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:35.694102"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.21,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:35.694117"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.48,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:35.694122"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-室外区域",
+      "round_number": 4,
+      "collected_at": "2026-06-20T14:34:37.695945",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 4.32,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:37.695924"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 2.44,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:37.695935"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.31,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:37.695938"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-室外区域",
+      "round_number": 5,
+      "collected_at": "2026-06-20T14:34:39.697061",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 1.1,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:39.697007"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 2.12,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:39.697034"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.69,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:39.697044"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-室外区域",
+      "round_number": 6,
+      "collected_at": "2026-06-20T14:34:41.699231",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.59,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:41.699175"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.8,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:41.699202"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.55,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:41.699214"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-全区域",
+      "round_number": 1,
+      "collected_at": "2026-06-20T14:34:41.701878",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 4.3,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:41.701838"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.05,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:41.701856"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.49,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:41.701866"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-全区域",
+      "round_number": 2,
+      "collected_at": "2026-06-20T14:34:43.704278",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.89,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:43.704226"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.78,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:43.704252"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.51,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:43.704262"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-全区域",
+      "round_number": 3,
+      "collected_at": "2026-06-20T14:34:45.706190",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.21,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:45.706145"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.42,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:45.706168"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.55,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:45.706176"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-全区域",
+      "round_number": 4,
+      "collected_at": "2026-06-20T14:34:47.707789",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.28,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:47.707756"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.2,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:47.707773"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.18,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:47.707779"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-全区域",
+      "round_number": 5,
+      "collected_at": "2026-06-20T14:34:49.709091",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.24,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:49.709070"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.07,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:49.709081"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.01,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:49.709084"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "非核心园区-全区域",
+      "round_number": 6,
+      "collected_at": "2026-06-20T14:34:51.710614",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.84,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:51.710594"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.48,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:51.710604"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.86,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:51.710608"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-室外区域",
+      "round_number": 1,
+      "collected_at": "2026-06-20T14:34:51.711436",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.52,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:51.711425"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.3,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:51.711429"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.4,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:51.711432"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-室外区域",
+      "round_number": 2,
+      "collected_at": "2026-06-20T14:34:53.712364",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 1.12,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:53.712310"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.38,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:53.712337"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.57,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:53.712347"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-室外区域",
+      "round_number": 3,
+      "collected_at": "2026-06-20T14:34:55.715020",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.71,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:55.714999"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 2.16,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:55.715009"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.21,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:55.715013"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-室外区域",
+      "round_number": 4,
+      "collected_at": "2026-06-20T14:34:57.716747",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 0.94,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:57.716696"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.22,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:57.716721"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.21,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:57.716731"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-室外区域",
+      "round_number": 5,
+      "collected_at": "2026-06-20T14:34:59.719230",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.7,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:59.719207"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 2.03,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:59.719219"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.37,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:34:59.719222"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-室外区域",
+      "round_number": 6,
+      "collected_at": "2026-06-20T14:35:01.720640",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 4.16,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:01.720584"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.27,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:01.720611"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.78,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:01.720622"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-全区域",
+      "round_number": 1,
+      "collected_at": "2026-06-20T14:35:01.723278",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.97,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:01.723237"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.64,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:01.723255"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.14,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:01.723264"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-全区域",
+      "round_number": 2,
+      "collected_at": "2026-06-20T14:35:03.725107",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.65,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:03.725052"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.82,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:03.725079"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.53,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:03.725090"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-全区域",
+      "round_number": 3,
+      "collected_at": "2026-06-20T14:35:05.726760",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.75,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:05.726738"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.93,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:05.726749"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.19,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:05.726753"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-全区域",
+      "round_number": 4,
+      "collected_at": "2026-06-20T14:35:07.728128",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.86,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:07.728071"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 2.28,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:07.728098"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.7,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:07.728109"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-全区域",
+      "round_number": 5,
+      "collected_at": "2026-06-20T14:35:09.730539",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.7,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:09.730482"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.59,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:09.730510"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.76,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:09.730520"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "核心枢纽园区-全区域",
+      "round_number": 6,
+      "collected_at": "2026-06-20T14:35:11.732475",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.01,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:11.732418"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.93,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:11.732446"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.43,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:11.732457"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 1,
+      "collected_at": "2026-06-20T14:35:11.734988",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.75,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:11.734951"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.95,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:11.734966"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.49,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:11.734975"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 2,
+      "collected_at": "2026-06-20T14:35:13.736785",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 0.1,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:13.736748"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.93,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:13.736767"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.33,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:13.736773"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 3,
+      "collected_at": "2026-06-20T14:35:15.739050",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.36,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:15.739018"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.02,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:15.739032"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.44,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:15.739041"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 4,
+      "collected_at": "2026-06-20T14:35:17.740646",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 1.12,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:17.740607"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.11,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:17.740626"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.66,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:17.740634"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 5,
+      "collected_at": "2026-06-20T14:35:19.742933",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 3.27,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:19.742907"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.95,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:19.742920"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.1,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:19.742924"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 6,
+      "collected_at": "2026-06-20T14:35:21.744895",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 1.15,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:21.744837"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.52,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:21.744865"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.65,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:21.744878"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 7,
+      "collected_at": "2026-06-20T14:35:23.747403",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 1.21,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:23.747346"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.44,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:23.747374"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.48,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:23.747385"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 8,
+      "collected_at": "2026-06-20T14:35:25.750322",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 1.11,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:25.750278"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.25,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:25.750300"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.65,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:25.750308"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 9,
+      "collected_at": "2026-06-20T14:35:27.752281",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 0.42,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:27.752225"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.66,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:27.752253"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 1.65,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:27.752264"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 10,
+      "collected_at": "2026-06-20T14:35:29.754290",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 2.26,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:29.754229"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 0.93,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:29.754259"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.24,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:29.754271"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 11,
+      "collected_at": "2026-06-20T14:35:31.756681",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 0.86,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:31.756626"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.22,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:31.756653"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.44,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:31.756664"
+        }
+      ]
+    },
+    {
+      "release_id": "f93dfe403e0a",
+      "phase_name": "全量发布",
+      "round_number": 12,
+      "collected_at": "2026-06-20T14:35:33.758522",
+      "has_breach": false,
+      "metrics": [
+        {
+          "metric_key": "entry_failure_rate",
+          "metric_name": "入园失败率",
+          "value": 0.31,
+          "threshold": 5.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:33.758468"
+        },
+        {
+          "metric_key": "dock_conflict_rate",
+          "metric_name": "月台冲突率",
+          "value": 1.58,
+          "threshold": 3.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:33.758494"
+        },
+        {
+          "metric_key": "device_offline_rate",
+          "metric_name": "设备离线率",
+          "value": 0.78,
+          "threshold": 2.0,
+          "unit": "percent",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:35:33.758505"
+        }
+      ]
+    }
+  ]
+}

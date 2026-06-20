@@ -224,7 +224,6 @@ class GrayscaleDeployer:
                     all_snapshots.extend(phase_snapshots)
 
                     rollback_result = {}
-                    rollback_report_for_trace = None
 
                     if self.on_circuit_break:
                         rollback_result = self.on_circuit_break(
@@ -233,7 +232,6 @@ class GrayscaleDeployer:
                             cb_event=cb_event,
                             cb_detail=cb_result,
                         )
-                        rollback_report_for_trace = rollback_result.get("report")
 
                     cb_trace_files = {}
                     try:
@@ -247,7 +245,7 @@ class GrayscaleDeployer:
                             },
                             export_dir="./exports/trace",
                             release_id=release_id,
-                            rollback_report=rollback_report_for_trace,
+                            rollback_result=rollback_result,
                         )
                         logger.info("[EXPORT] 熔断链路包已导出:")
                         for fmt, path in cb_trace_files.items():

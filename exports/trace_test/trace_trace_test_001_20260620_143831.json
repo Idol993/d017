@@ -1,0 +1,140 @@
+{
+  "release_id": "trace_test_001",
+  "exported_at": "2026-06-20T14:38:31.908944",
+  "circuit_breaker": {
+    "triggered": true,
+    "triggered_by": "入园失败率",
+    "trigger_value": 0.087,
+    "threshold": 0.05
+  },
+  "grayscale_summary": {
+    "completed_phases": [
+      "phase1"
+    ],
+    "current_phase_index": 0,
+    "strategy_name": "by_zone"
+  },
+  "rollback": {
+    "rollback_started_at": "2026-06-20T14:38:30.298569",
+    "rollback_completed_at": "2026-06-20T14:38:31.899733",
+    "rollback_version": "",
+    "rollback_from_version": "2.0.0",
+    "rollback_to_version": "1.9.5",
+    "rollback_reason": "自动回滚测试",
+    "rollback_trigger": "circuit_breaker",
+    "trigger_metric": "入园失败率",
+    "trigger_value": 8.7,
+    "threshold": 5.0,
+    "duration_seconds": 1.6,
+    "overall_status": "completed",
+    "monitor_restarted": true,
+    "notification_sent": true,
+    "step_count": 4,
+    "step_results": [
+      {
+        "name": "暂停发布流程",
+        "step_key": "pause_deployment",
+        "status": "completed",
+        "started_at": "2026-06-20T14:38:30.298573",
+        "completed_at": "2026-06-20T14:38:30.798899",
+        "error": "",
+        "message": "发布流程已暂停"
+      },
+      {
+        "name": "切换服务版本",
+        "step_key": "switch_version",
+        "status": "completed",
+        "started_at": "2026-06-20T14:38:30.798924",
+        "completed_at": "2026-06-20T14:38:31.099003",
+        "error": "",
+        "message": "版本已切换至 1.9.5"
+      },
+      {
+        "name": "重启服务恢复监控",
+        "step_key": "restart_services",
+        "status": "completed",
+        "started_at": "2026-06-20T14:38:31.099034",
+        "completed_at": "2026-06-20T14:38:31.399585",
+        "error": "",
+        "message": "服务重启完成，监控已恢复"
+      },
+      {
+        "name": "回滚结果验证",
+        "step_key": "verify_rollback",
+        "status": "completed",
+        "started_at": "2026-06-20T14:38:31.399612",
+        "completed_at": "2026-06-20T14:38:31.899700",
+        "error": "",
+        "message": "回滚验证通过"
+      }
+    ],
+    "notification_status": {
+      "total": 1,
+      "success": 1,
+      "failed": 0,
+      "details": [
+        {
+          "channel": "notifier.notify_rollback_completed",
+          "success": true,
+          "status": "success",
+          "sent_at": "2026-06-20T14:38:31.900318",
+          "error": ""
+        }
+      ]
+    }
+  },
+  "snapshot_count": 2,
+  "monitor_timeline": [
+    {
+      "phase": "测试阶段",
+      "round": 1,
+      "time": "2026-06-20T14:38:31.908512",
+      "breached": false,
+      "breached_metrics": [],
+      "all_metrics": [
+        {
+          "metric_key": "入园失败率",
+          "metric_name": "入园失败率",
+          "value": 0.01,
+          "threshold": 0.05,
+          "unit": "ratio",
+          "is_breach": false,
+          "collected_at": "2026-06-20T14:38:31.908483"
+        }
+      ]
+    },
+    {
+      "phase": "测试阶段",
+      "round": 2,
+      "time": "2026-06-20T14:38:31.908534",
+      "breached": true,
+      "breached_metrics": [
+        {
+          "key": "入园失败率",
+          "name": "入园失败率",
+          "value": 0.087,
+          "threshold": 0.05
+        }
+      ],
+      "all_metrics": [
+        {
+          "metric_key": "入园失败率",
+          "metric_name": "入园失败率",
+          "value": 0.087,
+          "threshold": 0.05,
+          "unit": "ratio",
+          "is_breach": true,
+          "collected_at": "2026-06-20T14:38:31.908524"
+        }
+      ]
+    }
+  ],
+  "trigger_analysis": {
+    "trigger_round": 0,
+    "pre_trigger_rounds": 0,
+    "trigger_phase": "",
+    "trigger_time": "",
+    "trend_analysis": {},
+    "total_breached_metrics": 0
+  }
+}
