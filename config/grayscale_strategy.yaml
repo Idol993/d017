@@ -1,0 +1,81 @@
+strategies:
+  by_zone:
+    name: "按园区区域灰度"
+    description: "先非核心园区后核心枢纽园区、先室外区域后室内分拣区"
+    phases:
+      - name: "非核心园区-室外区域"
+        parks:
+          - park_id: "PK-EAST-03"
+            park_name: "东区3号园"
+            zones: ["outdoor_parking", "gate_area"]
+          - park_id: "PK-WEST-02"
+            park_name: "西区2号园"
+            zones: ["outdoor_parking", "gate_area"]
+        traffic_percent: 10
+        monitor_rounds: 6
+        auto_advance: true
+
+      - name: "非核心园区-全区域"
+        parks:
+          - park_id: "PK-EAST-03"
+            park_name: "东区3号园"
+            zones: ["outdoor_parking", "gate_area", "indoor_sorting", "loading_dock"]
+          - park_id: "PK-WEST-02"
+            park_name: "西区2号园"
+            zones: ["outdoor_parking", "gate_area", "indoor_sorting", "loading_dock"]
+        traffic_percent: 30
+        monitor_rounds: 6
+        auto_advance: true
+
+      - name: "核心枢纽园区-室外区域"
+        parks:
+          - park_id: "PK-CENTER-01"
+            park_name: "中心枢纽1号园"
+            zones: ["outdoor_parking", "gate_area"]
+          - park_id: "PK-SOUTH-01"
+            park_name: "南区枢纽1号园"
+            zones: ["outdoor_parking", "gate_area"]
+        traffic_percent: 50
+        monitor_rounds: 6
+        auto_advance: true
+
+      - name: "核心枢纽园区-全区域"
+        parks:
+          - park_id: "PK-CENTER-01"
+            park_name: "中心枢纽1号园"
+            zones: ["outdoor_parking", "gate_area", "indoor_sorting", "loading_dock"]
+          - park_id: "PK-SOUTH-01"
+            park_name: "南区枢纽1号园"
+            zones: ["outdoor_parking", "gate_area", "indoor_sorting", "loading_dock"]
+        traffic_percent: 80
+        monitor_rounds: 6
+        auto_advance: true
+
+      - name: "全量发布"
+        parks: "all"
+        traffic_percent: 100
+        monitor_rounds: 12
+        auto_advance: false
+
+  by_traffic:
+    name: "按流量比例灰度"
+    description: "逐步增大流量比例"
+    phases:
+      - name: "5%流量"
+        traffic_percent: 5
+        monitor_rounds: 6
+        auto_advance: true
+      - name: "20%流量"
+        traffic_percent: 20
+        monitor_rounds: 6
+        auto_advance: true
+      - name: "50%流量"
+        traffic_percent: 50
+        monitor_rounds: 6
+        auto_advance: true
+      - name: "100%全量"
+        traffic_percent: 100
+        monitor_rounds: 12
+        auto_advance: false
+
+default_strategy: "by_zone"

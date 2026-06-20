@@ -1,0 +1,80 @@
+release_types:
+  normal:
+    name: "常规迭代"
+    code: "NORMAL"
+    approval_mode: "serial"
+    allow_parallel: false
+    require_post_sign: false
+    flow:
+      - level: 1
+        role: "park_manager"
+        name: "园区负责人"
+        description: "现场运营与人员调度评估"
+        timeout_minutes: 120
+      - level: 2
+        role: "operations"
+        name: "运营"
+        description: "业务影响与月台利用率评估"
+        timeout_minutes: 90
+      - level: 3
+        role: "tech_lead"
+        name: "技术负责人"
+        description: "架构与代码评估"
+        timeout_minutes: 60
+
+  hotfix:
+    name: "紧急热修复"
+    code: "HOTFIX"
+    approval_mode: "parallel"
+    allow_parallel: true
+    require_post_sign: true
+    flow:
+      - level: 1
+        role: "park_manager"
+        name: "园区负责人"
+        timeout_minutes: 30
+      - level: 1
+        role: "operations"
+        name: "运营"
+        timeout_minutes: 30
+      - level: 1
+        role: "tech_lead"
+        name: "技术负责人"
+        timeout_minutes: 30
+
+approvers:
+  park_manager:
+    - name: "张经理"
+      id: "pm001"
+      phone: "13800000001"
+      email: "pm001@logistics-park.com"
+  operations:
+    - name: "李运营"
+      id: "op001"
+      phone: "13800000002"
+      email: "op001@logistics-park.com"
+  tech_lead:
+    - name: "王技术"
+      id: "tl001"
+      phone: "13800000003"
+      email: "tl001@logistics-park.com"
+
+type_detection:
+  branch_rules:
+    hotfix:
+      - "hotfix/*"
+      - "fix/*"
+      - "patch/*"
+    normal:
+      - "release/*"
+      - "main"
+      - "develop"
+  label_rules:
+    hotfix:
+      - "hotfix"
+      - "critical"
+      - "urgent"
+    normal:
+      - "release"
+      - "feature"
+      - "enhancement"

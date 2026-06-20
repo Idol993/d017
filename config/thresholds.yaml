@@ -1,0 +1,65 @@
+pre_check:
+  vehicle_entry_pass_rate:
+    name: "车辆入园通过率"
+    description: "基于历史数据回归测试"
+    unit: "percent"
+    threshold: 95.0
+    critical: true
+    weight: 25
+    data_source: "vehicle_entry_api"
+    fix_suggestion: "请检查车辆识别系统、道闸设备及入园规则配置，确认历史回归测试数据是否达标"
+
+  dock_dispatch_success_rate:
+    name: "月台调度成功率"
+    description: "月台分配与调度执行成功率"
+    unit: "percent"
+    threshold: 98.0
+    critical: true
+    weight: 25
+    data_source: "dock_dispatch_api"
+    fix_suggestion: "请检查月台调度算法配置、月台状态同步机制及车辆排队策略"
+
+  access_device_health_rate:
+    name: "门禁设备健康状态"
+    description: "门禁设备在线率与功能正常率"
+    unit: "percent"
+    threshold: 99.0
+    critical: true
+    weight: 25
+    data_source: "device_health_api"
+    fix_suggestion: "请检查门禁设备网络连接、固件版本及硬件状态，联系设备供应商排查异常设备"
+
+  network_connectivity_rate:
+    name: "园区网络连通率"
+    description: "内网与外网专线连通率"
+    unit: "percent"
+    threshold: 99.5
+    critical: true
+    weight: 25
+    data_source: "network_monitor_api"
+    fix_suggestion: "请检查园区交换机、路由器状态及运营商专线线路，联系网络运维团队排查"
+
+circuit_breaker:
+  entry_failure_rate:
+    name: "入园失败率"
+    description: "灰度期间车辆入园失败占比"
+    unit: "percent"
+    threshold: 5.0
+    comparison: "above"
+    action: "circuit_break"
+
+  dock_conflict_rate:
+    name: "月台冲突率"
+    description: "灰度期间月台调度冲突占比"
+    unit: "percent"
+    threshold: 3.0
+    comparison: "above"
+    action: "circuit_break"
+
+  device_offline_rate:
+    name: "设备离线率"
+    description: "灰度期间门禁/监控设备离线占比"
+    unit: "percent"
+    threshold: 2.0
+    comparison: "above"
+    action: "circuit_break"

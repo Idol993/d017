@@ -1,0 +1,57 @@
+version: "1.0"
+description: "物流园区前置校验样例数据 - 健康状态，所有指标均达标"
+statistical_period:
+  start: "2026-06-13T00:00:00"
+  end: "2026-06-19T23:59:59"
+  days: 7
+
+target_parks:
+  - "PK-CENTER-01"
+  - "PK-SOUTH-01"
+  - "PK-EAST-03"
+  - "PK-WEST-02"
+
+metrics:
+  vehicle_entry_pass_rate:
+    name: "车辆入园通过率"
+    unit: "percent"
+    value: 97.85
+    sample_size: 8642
+    pass_count: 8457
+    fail_count: 185
+    period: "7天"
+    data_points: [97.2, 98.1, 97.5, 98.3, 97.9, 98.5, 97.5]
+    trend: "stable"
+
+  dock_dispatch_success_rate:
+    name: "月台调度成功率"
+    unit: "percent"
+    value: 99.12
+    sample_size: 5234
+    success_count: 5188
+    conflict_count: 46
+    period: "7天"
+    data_points: [98.8, 99.2, 99.0, 99.3, 99.1, 99.4, 99.0]
+    trend: "stable"
+
+  access_device_health_rate:
+    name: "门禁设备健康状态"
+    unit: "percent"
+    value: 99.65
+    sample_size: 285
+    online_count: 284
+    offline_count: 1
+    period: "7天"
+    data_points: [99.3, 99.6, 99.7, 99.6, 99.7, 99.6, 100.0]
+    trend: "improving"
+
+  network_connectivity_rate:
+    name: "园区网络连通率"
+    unit: "percent"
+    value: 99.82
+    sample_size: 10080
+    internal_rate: 99.91
+    external_rate: 99.73
+    period: "7天"
+    data_points: [99.7, 99.8, 99.9, 99.8, 99.8, 99.9, 99.7]
+    trend: "stable"

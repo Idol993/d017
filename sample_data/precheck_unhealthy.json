@@ -1,0 +1,57 @@
+version: "1.0"
+description: "物流园区前置校验样例数据 - 异常状态，部分指标未达标"
+statistical_period:
+  start: "2026-06-13T00:00:00"
+  end: "2026-06-19T23:59:59"
+  days: 7
+
+target_parks:
+  - "PK-CENTER-01"
+  - "PK-SOUTH-01"
+  - "PK-EAST-03"
+  - "PK-WEST-02"
+
+metrics:
+  vehicle_entry_pass_rate:
+    name: "车辆入园通过率"
+    unit: "percent"
+    value: 92.50
+    sample_size: 7820
+    pass_count: 7234
+    fail_count: 586
+    period: "7天"
+    data_points: [94.2, 93.1, 92.8, 92.1, 91.5, 92.0, 91.8]
+    trend: "declining"
+
+  dock_dispatch_success_rate:
+    name: "月台调度成功率"
+    unit: "percent"
+    value: 96.80
+    sample_size: 4850
+    success_count: 4695
+    conflict_count: 155
+    period: "7天"
+    data_points: [97.5, 97.0, 96.8, 96.5, 96.2, 96.8, 96.8]
+    trend: "declining"
+
+  access_device_health_rate:
+    name: "门禁设备健康状态"
+    unit: "percent"
+    value: 97.20
+    sample_size: 285
+    online_count: 277
+    offline_count: 8
+    period: "7天"
+    data_points: [98.6, 98.2, 97.9, 97.5, 97.0, 96.8, 94.6]
+    trend: "declining"
+
+  network_connectivity_rate:
+    name: "园区网络连通率"
+    unit: "percent"
+    value: 98.90
+    sample_size: 10080
+    internal_rate: 99.20
+    external_rate: 98.60
+    period: "7天"
+    data_points: [99.5, 99.2, 99.0, 98.8, 98.7, 98.5, 98.6]
+    trend: "declining"

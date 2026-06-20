@@ -1,0 +1,62 @@
+system:
+  name: "物流园区管理系统上线发布与故障回滚自动化平台"
+  version: "1.0.0"
+  data_dir: "./data"
+  log_dir: "./logs"
+  backup_dir: "./backups"
+
+database:
+  type: "sqlite"
+  path: "./data/deploy_platform.db"
+
+notification:
+  enabled: true
+  channels:
+    - "wecom"
+    - "dingtalk"
+    - "email"
+  wecom:
+    webhook_url: ""
+    corp_id: ""
+    agent_id: ""
+    secret: ""
+  dingtalk:
+    webhook_url: ""
+    app_key: ""
+    app_secret: ""
+  email:
+    smtp_host: "smtp.example.com"
+    smtp_port: 465
+    sender: "deploy@logistics-park.com"
+    password: ""
+    use_ssl: true
+
+monitor:
+  interval_seconds: 300
+  max_monitor_rounds: 36
+  demo_mode:
+    enabled: false
+    interval_seconds: 2
+
+pre_check:
+  data_source:
+    type: "simulation"
+    file_path: "./sample_data/precheck_healthy.json"
+    fail_on_missing_file: true
+
+drill:
+  schedule_cron: "0 2 1 * *"
+  enabled: true
+
+report:
+  weekly_cron: "0 9 * * 1"
+  output_dir: "./reports"
+  formats:
+    - "pdf"
+    - "excel"
+    - "json"
+    - "csv"
+  chart:
+    enabled: true
+    dpi: 150
+    figsize: [12, 6]

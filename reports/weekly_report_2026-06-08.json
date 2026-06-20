@@ -1,0 +1,22 @@
+{
+  "id": "WKR-20260620094223",
+  "week_start": "2026-06-08",
+  "week_end": "2026-06-14",
+  "total_releases": 0,
+  "success_releases": 0,
+  "rollback_count": 0,
+  "success_rate": 0,
+  "avg_approval_duration_minutes": 0,
+  "details": {
+    "by_type": {
+      "NORMAL": 0,
+      "HOTFIX": 0
+    },
+    "by_park": {},
+    "daily_counts": {},
+    "pre_check_failed": 0,
+    "approval_rejected": 0,
+    "rollback_records": []
+  },
+  "generated_at": "2026-06-20T09:42:23.010392"
+}
