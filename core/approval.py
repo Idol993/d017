@@ -120,20 +120,42 @@ class ApprovalEngine:
 
         if release_type == ReleaseType.NORMAL:
             levels = sorted(set(r.level for r in records))
-            approved_levels = sorted(set(r.level for r in records if r.status == ApprovalStatus.APPROVED))
-
             target_level = target_record.level
+
             for level in levels:
-                if level < target_level and level not in approved_levels:
-                    level_records = [r for r in records if r.level == level]
-                    pending_count = len([r for r in level_records if r.status == ApprovalStatus.PENDING])
-                    if pending_count > 0:
-                        return {
-                            "success": False,
-                            "message": f"串行审批模式下，必须先完成级别 {level} 的审批，"
-                                       f"当前还有 {pending_count} 人待审批，"
-                                       f"不能跳过级别 {level} 直接审批级别 {target_level}",
-                        }
+                if level >= target_level:
+                    continue
+
+                level_records = [r for r in records if r.level == level]
+                level_pending = [r for r in level_records if r.status == ApprovalStatus.PENDING]
+                level_rejected = [r for r in level_records if r.status == ApprovalStatus.REJECTED]
+
+                if level_rejected:
+                    return {
+                        "success": False,
+                        "message": f"串行审批模式下，级别 {level} 已被 {level_rejected[0].approver_name} 驳回，"
+                                   f"不能继续审批级别 {target_level}",
+                    }
+
+                if level_pending:
+                    level_approved_count = len([r for r in level_records if r.status == ApprovalStatus.APPROVED])
+                    return {
+                        "success": False,
+                        "message": f"串行审批模式下，级别 {level} 还有 {len(level_pending)} 人待审批"
+                                   f" (已通过 {level_approved_count}/{len(level_records)} 人)，"
+                                   f"必须等该层所有审批人全部处理完成后，才能审批级别 {target_level}",
+                    }
+
+            same_level_records = [r for r in records if r.level == target_level]
+            same_level_approved = [r for r in same_level_records if r.status == ApprovalStatus.APPROVED]
+            if same_level_approved and len(same_level_records) > 1:
+                logger.debug(
+                    "级别 %d 审批进行中: 已通过 %d/%d, 当前审批人: %s",
+                    target_level,
+                    len(same_level_approved),
+                    len(same_level_records),
+                    target_record.approver_name,
+                )
 
         if approved:
             target_record.status = ApprovalStatus.APPROVED

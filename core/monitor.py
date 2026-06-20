@@ -435,13 +435,13 @@ class BusinessMonitor:
         bar_length = 30
         progress = round_number / max(total_rounds, 1)
         filled = int(bar_length * progress)
-        bar = "█" * filled + "░" * (bar_length - filled)
+        bar = "#" * filled + "-" * (bar_length - filled)
 
-        print(f"\r  📊 [{bar}] {round_number}/{total_rounds}  {phase_name}", end="", flush=True)
+        print(f"\r  [MONITOR] [{bar}] {round_number}/{total_rounds}  {phase_name}", end="", flush=True)
 
         metric_lines = []
         for m in metrics:
-            status_icon = "🔴" if m.is_breach else "🟢"
+            status_icon = "[!]" if m.is_breach else "[OK]"
             metric_lines.append(
                 f"     {status_icon} {m.metric_name}: {m.value}{m.unit} "
                 f"(阈值: {m.threshold}{m.unit})"
@@ -503,11 +503,11 @@ class BusinessMonitor:
         bar_length = 30
         progress = round_number / max(total_rounds, 1)
         filled = int(bar_length * progress)
-        bar = "█" * filled + "░" * (bar_length - filled)
+        bar = "#" * filled + "-" * (bar_length - filled)
         countdown = _format_countdown(remaining_seconds)
 
         sys.stdout.write(
-            f"\r  📊 [{bar}] {round_number}/{total_rounds}  {phase_name} "
+            f"\r  [MONITOR] [{bar}] {round_number}/{total_rounds}  {phase_name} "
             f"| 下一轮: {next_round_time.strftime('%H:%M:%S')} ({countdown}后)           "
         )
         sys.stdout.flush()

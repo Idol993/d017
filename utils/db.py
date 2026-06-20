@@ -86,6 +86,13 @@ def init_database(db_path: Optional[str] = None):
         )
     """)
 
+    cursor.execute("PRAGMA table_info(weekly_reports)")
+    existing_columns = {row[1] for row in cursor.fetchall()}
+    if "filter_info" not in existing_columns:
+        cursor.execute("ALTER TABLE weekly_reports ADD COLUMN filter_info TEXT DEFAULT '{}'")
+    if "export_files_info" not in existing_columns:
+        cursor.execute("ALTER TABLE weekly_reports ADD COLUMN export_files_info TEXT DEFAULT '{}'")
+
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_release_status ON release_records(status)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_release_version ON release_records(version)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_release_created ON release_records(created_at)")
@@ -249,6 +256,10 @@ def save_weekly_report(report: dict, db_path: Optional[str] = None):
     try:
         if isinstance(report.get("details"), dict):
             report["details"] = json.dumps(report["details"], ensure_ascii=False)
+        if isinstance(report.get("filter_info"), dict):
+            report["filter_info"] = json.dumps(report["filter_info"], ensure_ascii=False)
+        if isinstance(report.get("export_files_info"), dict):
+            report["export_files_info"] = json.dumps(report["export_files_info"], ensure_ascii=False)
 
         cursor = conn.cursor()
         columns = ", ".join(report.keys())
@@ -278,6 +289,10 @@ def get_weekly_reports(limit: int = 20, db_path: Optional[str] = None) -> List[d
             record = dict(row)
             if record.get("details"):
                 record["details"] = json.loads(record["details"])
+            if record.get("filter_info"):
+                record["filter_info"] = json.loads(record["filter_info"])
+            if record.get("export_files_info"):
+                record["export_files_info"] = json.loads(record["export_files_info"])
             results.append(record)
         return results
     finally:

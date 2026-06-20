@@ -1,5 +1,5 @@
 {
-  "id": "WKR-20260620100954",
+  "id": "WKR-20260620105256",
   "week_start": "2026-06-08",
   "week_end": "2026-06-14",
   "total_releases": 0,
@@ -7,18 +7,64 @@
   "rollback_count": 0,
   "success_rate": 0,
   "avg_approval_duration_minutes": 0,
+  "filter_info": {
+    "date_preset": "上周",
+    "date_start": "2026-06-08",
+    "date_end": "2026-06-14",
+    "days": 7,
+    "park_filter": "全部园区",
+    "park_filter_list": [],
+    "covered_parks": [],
+    "total_records_in_range": 0,
+    "records_after_filter": 0
+  },
   "details": {
+    "filter_info": {
+      "date_preset": "上周",
+      "date_start": "2026-06-08",
+      "date_end": "2026-06-14",
+      "days": 7,
+      "park_filter": "全部园区",
+      "park_filter_list": [],
+      "covered_parks": [],
+      "total_records_in_range": 0,
+      "records_after_filter": 0
+    },
     "by_type": {
       "NORMAL": 0,
       "HOTFIX": 0
     },
     "by_park": {},
-    "daily_counts": {},
-    "daily_success": {},
-    "daily_rollback": {},
+    "daily_counts": {
+      "2026-06-08": 0,
+      "2026-06-09": 0,
+      "2026-06-10": 0,
+      "2026-06-11": 0,
+      "2026-06-12": 0,
+      "2026-06-13": 0,
+      "2026-06-14": 0
+    },
+    "daily_success": {
+      "2026-06-08": 0,
+      "2026-06-09": 0,
+      "2026-06-10": 0,
+      "2026-06-11": 0,
+      "2026-06-12": 0,
+      "2026-06-13": 0,
+      "2026-06-14": 0
+    },
+    "daily_rollback": {
+      "2026-06-08": 0,
+      "2026-06-09": 0,
+      "2026-06-10": 0,
+      "2026-06-11": 0,
+      "2026-06-12": 0,
+      "2026-06-13": 0,
+      "2026-06-14": 0
+    },
     "pre_check_failed": 0,
     "approval_rejected": 0,
     "rollback_records": []
   },
-  "generated_at": "2026-06-20T10:09:54.712723"
+  "generated_at": "2026-06-20T10:52:56.971781"
 }

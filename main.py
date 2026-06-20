@@ -3,6 +3,7 @@ import json
 import logging
 import sys
 import os
+from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -133,8 +134,11 @@ def cmd_report(args):
     from scripts.weekly_report import generate_weekly_report, query_and_export
 
     if args.sub_command == "generate":
+        park_filter = args.park_filter if hasattr(args, 'park_filter') else None
         result = generate_weekly_report(
             week_start=args.week_start, week_end=args.week_end,
+            date_preset=args.date_preset,
+            park_filter=park_filter,
         )
         return result
     elif args.sub_command == "query":
@@ -147,6 +151,143 @@ def cmd_report(args):
         )
     else:
         return {"error": "请指定子命令: generate 或 query"}
+
+
+def cmd_sample(args):
+    from utils.sample_data import (
+        SampleDataManager,
+        format_sample_list_table,
+        format_sample_info_detail,
+    )
+    from core.pre_check import PreChecker, get_thresholds
+
+    manager = SampleDataManager()
+
+    if args.sub_command == "list":
+        samples = manager.list_samples()
+        print(format_sample_list_table(samples))
+        return {"count": len(samples), "samples": samples}
+
+    elif args.sub_command == "info":
+        filename = args.filename
+        try:
+            info = manager.get_info(filename)
+            print(format_sample_info_detail(info))
+            return info
+        except (FileNotFoundError, ValueError) as e:
+            return {"error": str(e)}
+
+    elif args.sub_command == "validate":
+        filename = args.filename
+        try:
+            thresholds = get_thresholds().get("pre_check", {})
+            result = manager.validate(filename, thresholds_config=thresholds)
+            print("=" * 60)
+            print(f"样例文件格式校验: {filename}")
+            print("=" * 60)
+            print(f"  校验结果: {'✅ 通过' if result['valid'] else '❌ 不通过'}")
+            print(f"  指标数量: {result.get('metric_count', 0)}"
+                  f" (配置中预期: {result.get('expected_metric_count', 0)})")
+
+            if result.get("issues"):
+                print("\n  🚨 格式错误:")
+                for i in result["issues"]:
+                    print(f"    • {i}")
+
+            if result.get("warnings"):
+                print("\n  ⚠️  警告:")
+                for w in result["warnings"]:
+                    print(f"    • {w}")
+
+            if result["valid"] and not result.get("warnings"):
+                print("\n  🎉 样例文件格式正确，可直接用于发布校验")
+
+            print("=" * 60)
+            return result
+        except (FileNotFoundError, ValueError) as e:
+            return {"error": str(e)}
+
+    elif args.sub_command == "dry-run":
+        filename = args.filename
+        resolved = manager.resolve_path(filename)
+        if not resolved:
+            return {
+                "error": f"无法解析样例文件路径: {filename}\n"
+                         f"请使用 'python main.py sample list' 查看可用样例"
+            }
+
+        release_id = f"DRY-RUN-{os.getpid()}-{datetime.now().strftime('%H%M%S')}"
+        logger.info("=" * 60)
+        logger.info("前置校验 DRY-RUN 模式 - 只校验不发布")
+        logger.info("=" * 60)
+
+        try:
+            thresholds = get_thresholds().get("pre_check", {})
+            checker = PreChecker(
+                thresholds_config=thresholds,
+                sample_data_path=resolved,
+                strict_mode=True,
+            )
+            report = checker.run_pre_check(
+                release_id=release_id,
+                target_parks=args.target_parks or None,
+            )
+            detailed = checker.get_detailed_result(report)
+
+            if checker.load_failure:
+                logger.error("❌ 样例数据加载失败")
+                return {
+                    "success": False,
+                    "dry_run": True,
+                    "blocked": True,
+                    "blocked_reason": "样例数据加载失败",
+                    "load_error": checker.load_failure,
+                    "result": detailed,
+                }
+
+            if report.all_passed:
+                logger.info("✅ DRY-RUN 通过: 所有前置校验指标达标，可进入审批流程")
+                return {
+                    "success": True,
+                    "dry_run": True,
+                    "all_passed": True,
+                    "can_proceed": True,
+                    "result": detailed,
+                }
+            else:
+                logger.error("❌ DRY-RUN 未通过: 发布将被阻断在准入阶段")
+                failed = [i for i in report.items if not i.is_pass]
+                for item in failed:
+                    gap = round(item.actual_value - item.threshold, 2)
+                    logger.error(
+                        "  • %s: %s%s (阈值: %s%s, 差距: %+g%s)",
+                        item.metric_name,
+                        item.actual_value, item.unit,
+                        item.threshold, item.unit,
+                        gap, item.unit,
+                    )
+                    if item.fix_suggestion:
+                        logger.error("    💡 修复建议: %s", item.fix_suggestion)
+
+                return {
+                    "success": False,
+                    "dry_run": True,
+                    "all_passed": False,
+                    "blocked": True,
+                    "blocked_at": "pre_check",
+                    "failed_count": len(failed),
+                    "result": detailed,
+                }
+        except Exception as e:
+            logger.exception("DRY-RUN 执行异常")
+            return {
+                "success": False,
+                "dry_run": True,
+                "error": str(e),
+            }
+
+    else:
+        return {"error": "请指定子命令: list/info/validate/dry-run"}
 
 
 def cmd_status(args):
@@ -174,13 +315,27 @@ def main():
         description="物流园区管理系统 - 上线发布与故障回滚自动化平台",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  python main.py deploy --version 2.1.0 --previous-version 2.0.0 --branch release/2.1 --auto-approve
-  python main.py deploy --version 2.1.0 --sample-data ./sample_data/precheck_healthy.json --demo-mode --auto-approve
+样例数据管理:
+  python main.py sample list                                    列出本地样例数据文件
+  python main.py sample info precheck_healthy.yaml              查看样例详情
+  python main.py sample validate precheck_healthy.yaml          校验样例格式
+  python main.py sample dry-run precheck_healthy.yaml           只校验不发布(dry-run)
+
+发布流程:
+  python main.py deploy --version 2.1.0 --previous-version 2.0.0 \\
+      --branch release/2.1 --auto-approve
+  python main.py deploy --version 2.1.0 --sample-data ./sample_data/precheck_healthy.yaml \\
+      --demo-mode --auto-approve
   python main.py approve --release-id abc123 --approver-id pm001 --approve --comment "同意"
+
+回滚与演练:
   python main.py rollback --release-id abc123 --version 2.1.0 --previous-version 2.0.0
   python main.py drill --target-parks PK-EAST-03
-  python main.py report generate
+
+运营报表:
+  python main.py report generate --date-preset this_week                        生成本周报表
+  python main.py report generate --date-preset last_week --park-filter PK-CENTER-01
+  python main.py report generate --week-start 2026-06-01 --week-end 2026-06-30  自定义日期
   python main.py report query --query-type release --format json
   python main.py status --release-id abc123
         """,
@@ -200,7 +355,7 @@ def main():
     deploy_parser.add_argument("--grayscale-strategy", default="by_zone", help="灰度策略")
     deploy_parser.add_argument("--target-parks", nargs="*", default=[], help="目标园区")
     deploy_parser.add_argument("--auto-approve", action="store_true", help="自动审批(演示模式)")
-    deploy_parser.add_argument("--sample-data", default=None, help="前置校验样例数据文件路径")
+    deploy_parser.add_argument("--sample-data", default=None, help="前置校验样例数据文件路径 (.yaml/.json)")
     deploy_parser.add_argument("--demo-mode", action="store_true", help="演示模式(灰度监控间隔缩短)")
 
     # approve
@@ -224,13 +379,33 @@ def main():
     drill_parser.add_argument("--scheduled", action="store_true", help="标记为定期演练")
     drill_parser.add_argument("--check-monthly", action="store_true", help="检查并执行月度演练")
 
+    # sample data management
+    sample_parser = subparsers.add_parser("sample", help="样例数据管理")
+    sample_sub = sample_parser.add_subparsers(dest="sub_command", help="样例子命令")
+
+    sample_list = sample_sub.add_parser("list", help="列出所有样例数据文件")
+    sample_info = sample_sub.add_parser("info", help="查看样例文件详情")
+    sample_info.add_argument("filename", help="样例文件名或路径")
+    sample_validate = sample_sub.add_parser("validate", help="校验样例文件格式")
+    sample_validate.add_argument("filename", help="样例文件名或路径")
+    sample_dryrun = sample_sub.add_parser("dry-run", help="只做前置校验不进入发布流程")
+    sample_dryrun.add_argument("filename", help="样例文件名或路径")
+    sample_dryrun.add_argument("--target-parks", nargs="*", default=None, help="目标园区(可选)")
+
     # report
     report_parser = subparsers.add_parser("report", help="周报与查询")
     report_sub = report_parser.add_subparsers(dest="sub_command", help="报表子命令")
 
-    report_gen = report_sub.add_parser("generate", help="生成周报")
-    report_gen.add_argument("--week-start", default=None, help="周起始日期")
-    report_gen.add_argument("--week-end", default=None, help="周结束日期")
+    report_gen = report_sub.add_parser("generate", help="生成运营周报")
+    report_gen.add_argument("--week-start", default=None, help="起始日期 YYYY-MM-DD")
+    report_gen.add_argument("--week-end", default=None, help="结束日期 YYYY-MM-DD")
+    report_gen.add_argument(
+        "--date-preset", default=None,
+        choices=["this_week", "last_week", "last_30_days", "last_90_days", "custom"],
+        help="日期预设: this_week(本周)/last_week(上周,默认)/last_30_days/last_90_days",
+    )
+    report_gen.add_argument("--park-filter", nargs="*", default=None,
+                           help="按园区筛选 (可指定多个园区ID)")
 
     report_query = report_sub.add_parser("query", help="查询与导出")
     report_query.add_argument("--query-type", default="release", choices=["release", "audit", "integrity"])
@@ -259,6 +434,7 @@ def main():
         "rollback": cmd_rollback,
         "drill": cmd_drill,
         "report": cmd_report,
+        "sample": cmd_sample,
         "status": cmd_status,
     }
 

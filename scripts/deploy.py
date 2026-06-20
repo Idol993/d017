@@ -104,21 +104,45 @@ def run_full_deploy(version: str, previous_version: str = "",
 
         notifier.notify_pre_check_result(record.id, version, False, summary)
 
+        load_error = getattr(pre_checker, 'load_failure', None)
+        if load_error:
+            logger.info("前置校验被阻断: 样例数据加载失败!")
+            logger.info("  错误原因: %s", load_error)
+            logger.info("  💡 请使用 'python main.py sample list' 查看可用样例")
+            logger.info("  💡 或使用 'python main.py sample validate <文件名>' 校验格式")
+            return {
+                "success": False,
+                "release_id": record.id,
+                "status": "pre_check_failed",
+                "blocked_at": "pre_check",
+                "blocked_reason": "sample_data_error",
+                "error_detail": load_error,
+                "suggestions": suggestions,
+            }
+
         logger.info("前置校验未通过，发布被阻断在准入阶段!")
         logger.info("\n校验详情:")
         for item in pre_check_report.items:
-            status_icon = "✅" if item.passed else "❌"
+            status_icon = "✅" if (hasattr(item, 'passed') and item.passed) else "❌"
+            sample_size = getattr(item, 'sample_size', None) or 0
+            period = getattr(item, 'period', None) or "-"
+            trend = getattr(item, 'trend', None) or "-"
+            current_value = getattr(item, 'current_value', 0)
+            unit = getattr(item, 'unit', '') or ""
             logger.info(
-                "  %s %s: 当前=%.2f%s, 阈值=%.2f%s, 样本量=%d, 周期=%s, 趋势=%s",
+                "  %s %s: 当前=%s%s, 阈值=%s%s, 样本量=%s, 周期=%s, 趋势=%s",
                 status_icon, item.metric_name,
-                item.current_value, item.unit or "",
-                item.threshold, item.unit or "",
-                item.sample_size or 0, item.period or "-",
-                item.trend or "-",
+                current_value, unit,
+                item.threshold, unit,
+                sample_size, period, trend,
             )
+            err_detail = getattr(item, 'error_detail', None)
+            if err_detail:
+                logger.info("     错误: %s", err_detail)
         logger.info("")
         for s in suggestions:
-            logger.info("  💡 %s: 当前值=%.2f, 差距=%.2f", s["metric_name"], s["actual_value"], s["gap"])
+            logger.info("  💡 %s: 当前值=%s, 差距=%s",
+                        s["metric_name"], s.get("actual_value"), s.get("gap"))
             logger.info("     修复建议: %s", s["fix_suggestion"])
 
         return {

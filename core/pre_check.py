@@ -553,10 +553,14 @@ class PreChecker:
 
             if hasattr(item, 'raw_data'):
                 rd = item.raw_data
-                lines.append(f"   样本量: {rd.get('sample_size', 'N/A')}, 周期: {rd.get('period', '7天')}")
-                if "data_points" in rd and rd["data_points"]:
-                    dp = rd["data_points"]
-                    lines.append(f"   每日数据: {dp}")
+                if isinstance(rd, dict):
+                    lines.append(f"   样本量: {rd.get('sample_size', 'N/A')}, 周期: {rd.get('period', '7天')}")
+                    if rd.get("data_points"):
+                        lines.append(f"   每日数据: {rd['data_points']}")
+
+            err_detail = getattr(item, 'error_detail', None)
+            if err_detail:
+                lines.append(f"   ❌ 错误: {err_detail}")
 
             if not item.is_pass and item.fix_suggestion:
                 lines.append(f"   💡 修复建议: {item.fix_suggestion}")
@@ -581,9 +585,12 @@ class PreChecker:
                     suggestion["extra_info"] = item.extra_info
                 if hasattr(item, 'raw_data'):
                     rd = item.raw_data
-                    suggestion["sample_size"] = rd.get("sample_size")
-                    suggestion["period"] = rd.get("period")
-                    suggestion["statistical_period"] = rd.get("statistical_period")
+                    if isinstance(rd, dict):
+                        suggestion["sample_size"] = rd.get("sample_size")
+                        suggestion["period"] = rd.get("period")
+                        suggestion["statistical_period"] = rd.get("statistical_period")
+                if hasattr(item, 'error_detail') and item.error_detail:
+                    suggestion["error_detail"] = item.error_detail
                 suggestions.append(suggestion)
         return suggestions
 

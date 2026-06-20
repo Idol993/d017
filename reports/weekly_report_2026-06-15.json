@@ -1,0 +1,74 @@
+{
+  "id": "WKR-20260620104717",
+  "week_start": "2026-06-15",
+  "week_end": "2026-06-21",
+  "total_releases": 0,
+  "success_releases": 0,
+  "rollback_count": 0,
+  "success_rate": 0,
+  "avg_approval_duration_minutes": 0,
+  "filter_info": {
+    "date_preset": "本周",
+    "date_start": "2026-06-15",
+    "date_end": "2026-06-21",
+    "days": 7,
+    "park_filter": "PK-CENTER-01",
+    "park_filter_list": [
+      "PK-CENTER-01"
+    ],
+    "covered_parks": [],
+    "total_records_in_range": 16,
+    "records_after_filter": 0
+  },
+  "details": {
+    "filter_info": {
+      "date_preset": "本周",
+      "date_start": "2026-06-15",
+      "date_end": "2026-06-21",
+      "days": 7,
+      "park_filter": "PK-CENTER-01",
+      "park_filter_list": [
+        "PK-CENTER-01"
+      ],
+      "covered_parks": [],
+      "total_records_in_range": 16,
+      "records_after_filter": 0
+    },
+    "by_type": {
+      "NORMAL": 0,
+      "HOTFIX": 0
+    },
+    "by_park": {},
+    "daily_counts": {
+      "2026-06-15": 0,
+      "2026-06-16": 0,
+      "2026-06-17": 0,
+      "2026-06-18": 0,
+      "2026-06-19": 0,
+      "2026-06-20": 0,
+      "2026-06-21": 0
+    },
+    "daily_success": {
+      "2026-06-15": 0,
+      "2026-06-16": 0,
+      "2026-06-17": 0,
+      "2026-06-18": 0,
+      "2026-06-19": 0,
+      "2026-06-20": 0,
+      "2026-06-21": 0
+    },
+    "daily_rollback": {
+      "2026-06-15": 0,
+      "2026-06-16": 0,
+      "2026-06-17": 0,
+      "2026-06-18": 0,
+      "2026-06-19": 0,
+      "2026-06-20": 0,
+      "2026-06-21": 0
+    },
+    "pre_check_failed": 0,
+    "approval_rejected": 0,
+    "rollback_records": []
+  },
+  "generated_at": "2026-06-20T10:47:17.550294"
+}

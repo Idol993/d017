@@ -427,20 +427,20 @@ class WeeklyReporter:
 
         filter_info = report.get("filter_info", {})
 
-        ws_summary["A3"] = "📋 筛选条件"
+        ws_summary["A3"] = "筛选条件"
         ws_summary["B3"] = "值"
-        ws_summary["C3":D3":E3"] = ""
+        ws_summary["C3"] = ""
+        ws_summary["D3"] = ""
+        ws_summary["E3"] = ""
         ws_summary["A3"].font = subheader_font
-        ws_summary["B3"] = subheader_font
+        ws_summary["B3"].font = subheader_font
         ws_summary.merge_cells("B3:E3")
 
         row = 4
         ws_summary[f"A{row}"] = "统计周期"
         ws_summary[f"B{row}"] = filter_info.get("date_preset", "")
-        ws_summary[f"C{row}"] = (
-            f"{filter_info.get('date_start', '')
-            f" ~ {filter_info.get('date_end', '')}"
-        )
+        date_range_str = f"{filter_info.get('date_start', '')} ~ {filter_info.get('date_end', '')}"
+        ws_summary[f"C{row}"] = date_range_str
         ws_summary[f"D{row}"] = f"{filter_info.get('days', 0)}天"
         ws_summary.merge_cells(f"C{row}:E{row}")
 
@@ -465,7 +465,7 @@ class WeeklyReporter:
 
         if current_exports:
             row = 8
-            ws_summary[f"A{row}"] = "📁 导出文件"
+            ws_summary[f"A{row}"] = "导出文件"
             ws_summary[f"A{row}"].font = subheader_font
             row += 1
             for fmt, fpath in current_exports.items():
@@ -479,8 +479,8 @@ class WeeklyReporter:
         summary_headers = ["指标", "数值", "单位", "说明"]
         summary_data = [
             ["发布总数", report["total_releases"], "次", "本周发布申请总数"],
-            ["成功发布", report["success_releases"]], "次", "全量发布成功的次数"],
-            ["回滚次数", report["rollback_count"]], "次", "触发熔断或手动回滚次数"],
+            ["成功发布", report["success_releases"], "次", "全量发布成功的次数"],
+            ["回滚次数", report["rollback_count"], "次", "触发熔断或手动回滚次数"],
             ["发布成功率", f"{report['success_rate']}%", "%", "成功发布 / 总发布"],
             ["平均审批时长", f"{report['avg_approval_duration_minutes']:.1f}", "分钟", "从提交审批到通过的平均时间"],
         ]
@@ -888,7 +888,7 @@ class WeeklyReporter:
             f"生成时间: {report['generated_at']}",
             "",
             "-" * 70,
-            "  📊 核心指标",
+            "  [STATS] 核心指标",
             "-" * 70,
             f"  发布总数:      {report['total_releases']:>5} 次",
             f"  成功发布:      {report['success_releases']:>5} 次   "
@@ -897,7 +897,7 @@ class WeeklyReporter:
             f"平均审批时长:  {report['avg_approval_duration_minutes']:>7.1f} 分钟",
             "",
             "-" * 70,
-            "  📈 按发布类型",
+            "  [TYPES] 按发布类型",
             "-" * 70,
         ]
 
@@ -909,13 +909,13 @@ class WeeklyReporter:
         lines.extend([
             "",
             "-" * 70,
-            "  🏭 按园区分布",
+            "  [PARKS] 按园区分布",
             "-" * 70,
         ])
         by_park = details.get("by_park", {})
         if by_park:
             for park, count in by_park.items():
-                bar = "█" * min(count * 2, 40)
+                bar = "#" * min(count * 2, 40)
                 lines.append(f"  {park:<20}: {bar} ({count})")
         else:
             lines.append("  暂无园区数据")
@@ -923,7 +923,7 @@ class WeeklyReporter:
         lines.extend([
             "",
             "-" * 70,
-            "  📅 每日发布趋势",
+            "  [DAILY] 每日发布趋势",
             "-" * 70,
         ])
         daily_counts = details.get("daily_counts", {})
@@ -933,7 +933,7 @@ class WeeklyReporter:
             count = daily_counts[date]
             succ = daily_success.get(date, 0)
             rb = daily_rollback.get(date, 0)
-            bar = "█" * min(count * 2, 30)
+            bar = "#" * min(count * 2, 30)
             lines.append(
                 f"  {date}: {bar:<30} | 总={count:>2} 成={succ:>2} 回={rb:>2}"
             )

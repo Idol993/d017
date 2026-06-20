@@ -15,15 +15,28 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def generate_weekly_report(week_start: str = None, week_end: str = None) -> dict:
+def generate_weekly_report(week_start: str = None, week_end: str = None,
+                            date_preset: str = None,
+                            park_filter: list = None) -> dict:
     init_database()
 
     logger.info("=" * 60)
-    logger.info("物流园区管理系统 - 周报生成")
+    logger.info("物流园区管理系统 - 运营周报生成")
     logger.info("=" * 60)
 
     reporter = WeeklyReporter()
-    result = reporter.generate_weekly_report(week_start=week_start, week_end=week_end)
+    result = reporter.generate_weekly_report(
+        week_start=week_start,
+        week_end=week_end,
+        date_preset=date_preset,
+        park_filter=park_filter,
+    )
+
+    filter_info = result.get("filter_info", {})
+    if filter_info:
+        logger.info("  筛选条件: 日期=%s, 园区=%s",
+                    filter_info.get("date_preset", ""),
+                    filter_info.get("park_filter", "全部"))
 
     print(result.get("text_report", ""))
 
