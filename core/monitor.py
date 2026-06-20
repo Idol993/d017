@@ -124,7 +124,8 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
                                  grayscale_result: Dict,
                                  export_dir: str = "./exports/trace",
                                  release_id: Optional[str] = None,
-                                 extra_files: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+                                 extra_files: Optional[Dict[str, str]] = None,
+                                 rollback_report: Optional[Dict] = None) -> Dict[str, str]:
     """导出熔断回滚的完整链路包（ZIP 压缩包）。
 
     Args:
@@ -134,6 +135,7 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
         export_dir: 导出目录
         release_id: 发布单号
         extra_files: 额外需要打包的文件 {文件名: 文件路径}
+        rollback_report: 回滚报告 (包含开始/结束时间、版本、步骤结果、通知状态等)
 
     Returns:
         {格式: 文件路径} 字典，包含 zip 和单独的 trace json
@@ -144,6 +146,52 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
 
     export_files = {}
 
+    rollback_info = None
+    if rollback_report:
+        start_ts = rollback_report.get("started_at") or rollback_report.get("created_at") or ""
+        end_ts = rollback_report.get("completed_at") or rollback_report.get("updated_at") or ""
+        duration_seconds = None
+        if start_ts and end_ts:
+            try:
+                start_dt = datetime.fromisoformat(str(start_ts).replace("Z", "+00:00"))
+                end_dt = datetime.fromisoformat(str(end_ts).replace("Z", "+00:00"))
+                duration_seconds = round((end_dt - start_dt).total_seconds(), 2)
+            except Exception:
+                pass
+
+        steps = rollback_report.get("steps") or rollback_report.get("rollback_steps") or []
+        step_summaries = []
+        for s in steps:
+            step_summaries.append({
+                "name": s.get("name") or s.get("step_name") or "",
+                "status": s.get("status") or "",
+                "started_at": s.get("started_at") or s.get("start_time") or "",
+                "completed_at": s.get("completed_at") or s.get("end_time") or "",
+                "error": s.get("error") or "",
+            })
+
+        notifications = rollback_report.get("notifications") or rollback_report.get("notify_results") or []
+
+        rollback_info = {
+            "rollback_started_at": start_ts,
+            "rollback_completed_at": end_ts,
+            "rollback_version": rollback_report.get("version") or rollback_report.get("target_version") or "",
+            "rollback_from_version": rollback_report.get("from_version") or rollback_report.get("current_version") or "",
+            "rollback_to_version": rollback_report.get("to_version") or rollback_report.get("target_version") or "",
+            "rollback_reason": rollback_report.get("reason") or rollback_report.get("rollback_reason") or "",
+            "rollback_trigger": rollback_report.get("trigger") or rollback_report.get("triggered_by") or "",
+            "duration_seconds": duration_seconds,
+            "overall_status": rollback_report.get("status") or rollback_report.get("rollback_status") or "",
+            "step_count": len(step_summaries),
+            "step_results": step_summaries,
+            "notification_status": {
+                "total": len(notifications),
+                "success": sum(1 for n in notifications if n.get("success") or n.get("status") == "success"),
+                "failed": sum(1 for n in notifications if not n.get("success") and n.get("status") != "success"),
+                "details": notifications,
+            },
+        }
+
     trace_data = {
         "release_id": rid,
         "exported_at": datetime.now().isoformat(),
@@ -152,6 +200,7 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
             k: v for k, v in grayscale_result.items()
             if not isinstance(v, list) or len(v) < 100
         },
+        "rollback": rollback_info,
         "snapshot_count": len(snapshots),
         "monitor_timeline": [
             {
@@ -199,8 +248,27 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
             writer.writerows(rows)
         export_files["monitor_csv"] = os.path.abspath(details_csv_path)
 
+    if rollback_info:
+        rollback_csv_path = os.path.join(export_dir, f"rollback_steps_{rid}_{timestamp}.csv")
+        rb_rows = []
+        for s in rollback_info.get("step_results", []):
+            rb_rows.append({
+                "release_id": rid,
+                "step_name": s.get("name", ""),
+                "status": s.get("status", ""),
+                "started_at": s.get("started_at", ""),
+                "completed_at": s.get("completed_at", ""),
+                "error": s.get("error", ""),
+            })
+        if rb_rows:
+            with open(rollback_csv_path, "w", encoding="utf-8-sig", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=list(rb_rows[0].keys()))
+                w.writeheader()
+                w.writerows(rb_rows)
+            export_files["rollback_csv"] = os.path.abspath(rollback_csv_path)
+
     summary_md_path = os.path.join(export_dir, f"trace_summary_{rid}_{timestamp}.md")
-    summary_md = _generate_trace_summary_md(rid, trace_data)
+    summary_md = _generate_trace_summary_md(rid, trace_data, rollback_info=rollback_info)
     with open(summary_md_path, "w", encoding="utf-8") as f:
         f.write(summary_md)
     export_files["summary_md"] = os.path.abspath(summary_md_path)
@@ -215,7 +283,7 @@ def export_circuit_breaker_trace(snapshots: List[MonitorSnapshot],
                 if os.path.exists(real_path):
                     zf.write(real_path, arcname=arcname)
 
-        readme = _generate_trace_readme(rid, export_files, extra_files)
+        readme = _generate_trace_readme(rid, export_files, extra_files, rollback_info=rollback_info)
         zf.writestr("README.txt", readme)
 
     export_files["zip"] = os.path.abspath(zip_path)
@@ -258,7 +326,7 @@ def _analyze_trigger(snapshots: List[MonitorSnapshot],
     }
 
 
-def _generate_trace_summary_md(release_id: str, trace_data: Dict) -> str:
+def _generate_trace_summary_md(release_id: str, trace_data: Dict, rollback_info: Optional[Dict] = None) -> str:
     """生成熔断链路摘要 Markdown"""
     cb = trace_data.get("circuit_breaker", {})
     analysis = trace_data.get("trigger_analysis", {})
@@ -286,7 +354,7 @@ def _generate_trace_summary_md(release_id: str, trace_data: Dict) -> str:
     if trend:
         lines.extend(["", "## 近5轮趋势分析", ""])
         for mkey, info in trend.items():
-            vals = " → ".join(str(v) for v in info.get("recent_values", []))
+            vals = " -> ".join(str(v) for v in info.get("recent_values", []))
             lines.append(
                 f"- **{mkey}**: {vals}  "
                 f"(变化: {info.get('delta_5rounds', 0):+.4f}, 趋势: {info.get('trend', '')})"
@@ -296,13 +364,45 @@ def _generate_trace_summary_md(release_id: str, trace_data: Dict) -> str:
     lines.append(f"- **影响园区**: {', '.join(cb.get('affected_parks', []))}")
     lines.append(f"- **影响区域**: {', '.join(cb.get('affected_zones', []))}")
 
+    if rollback_info:
+        lines.extend(["", "## 回滚执行结果", ""])
+        lines.append(f"- **回滚状态**: {rollback_info.get('overall_status', 'UNKNOWN')}")
+        lines.append(f"- **回滚原因**: {rollback_info.get('rollback_reason', '')}")
+        lines.append(f"- **触发来源**: {rollback_info.get('rollback_trigger', '')}")
+        lines.append(f"- **当前版本 (回滚前)**: {rollback_info.get('rollback_from_version', '')}")
+        lines.append(f"- **目标版本 (回滚后)**: {rollback_info.get('rollback_to_version', '')}")
+        lines.append(f"- **开始时间**: {rollback_info.get('rollback_started_at', '')}")
+        lines.append(f"- **结束时间**: {rollback_info.get('rollback_completed_at', '')}")
+        dur = rollback_info.get("duration_seconds")
+        if dur is not None:
+            lines.append(f"- **执行耗时**: {dur} 秒")
+        lines.append(f"- **回滚步骤**: 共 {rollback_info.get('step_count', 0)} 步")
+        step_results = rollback_info.get("step_results", [])
+        if step_results:
+            lines.extend(["", "### 步骤详情", ""])
+            lines.append("| 步骤 | 状态 | 开始 | 结束 | 错误 |")
+            lines.append("|------|------|------|------|------|")
+            for s in step_results:
+                lines.append(
+                    f"| {s.get('name', '')} | {s.get('status', '')} | "
+                    f"{str(s.get('started_at', ''))[-8:]} | "
+                    f"{str(s.get('completed_at', ''))[-8:]} | "
+                    f"{s.get('error', '')} |"
+                )
+        notif = rollback_info.get("notification_status", {})
+        if notif:
+            lines.extend(["", "### 通知状态", ""])
+            lines.append(f"- **通知总数**: {notif.get('total', 0)}")
+            lines.append(f"- **成功**: {notif.get('success', 0)}")
+            lines.append(f"- **失败**: {notif.get('failed', 0)}")
+
     recent = cb.get("recent_snapshots", [])
     if recent:
         lines.extend(["", "## 熔断前最近指标快照", ""])
         for s in recent:
             lines.append(f"### 第 {s.get('round_number')} 轮 - {s.get('phase_name', '')}")
             for m in s.get("metrics", []):
-                flag = " 🔴" if m.get("is_breach") else ""
+                flag = " [BREACH]" if m.get("is_breach") else ""
                 lines.append(
                     f"- {m.get('metric_name')}: {m.get('value')}{m.get('unit', '')} "
                     f"(阈值: {m.get('threshold')}{m.get('unit', '')}){flag}"
@@ -314,19 +414,35 @@ def _generate_trace_summary_md(release_id: str, trace_data: Dict) -> str:
 
 def _generate_trace_readme(release_id: str,
                            export_files: Dict[str, str],
-                           extra_files: Optional[Dict[str, str]] = None) -> str:
+                           extra_files: Optional[Dict[str, str]] = None,
+                           rollback_info: Optional[Dict] = None) -> str:
     """生成 ZIP 包内的说明文件"""
     lines = [
         f"熔断回滚完整链路包 - {release_id}",
         "=" * 50,
         f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "",
-        "文件清单:",
     ]
 
+    if rollback_info:
+        lines.extend([
+            "回滚概要:",
+            f"  状态:    {rollback_info.get('overall_status', 'UNKNOWN')}",
+            f"  版本:    {rollback_info.get('rollback_from_version', '')} -> {rollback_info.get('rollback_to_version', '')}",
+            f"  时间:    {rollback_info.get('rollback_started_at', '')} ~ {rollback_info.get('rollback_completed_at', '')}",
+        ])
+        dur = rollback_info.get("duration_seconds")
+        if dur is not None:
+            lines.append(f"  耗时:    {dur} 秒")
+        lines.append(f"  步骤数:  {rollback_info.get('step_count', 0)} 步")
+        lines.append("")
+
+    lines.append("文件清单:")
+
     fmt_names = {
-        "trace_json": "完整链路数据 (JSON)",
+        "trace_json": "完整链路数据 (JSON, 含回滚信息)",
         "monitor_csv": "监控明细 (CSV)",
+        "rollback_csv": "回滚步骤明细 (CSV)",
         "summary_md": "摘要报告 (Markdown)",
         "zip": "本压缩包",
     }
@@ -343,9 +459,10 @@ def _generate_trace_readme(release_id: str,
     lines.extend([
         "",
         "使用说明:",
-        "  1. 先查看 summary_*.md 了解整体情况",
-        "  2. trace_*.json 可用于程序化分析",
+        "  1. 先查看 summary_*.md 了解整体情况(含触发指标、趋势分析、回滚结果)",
+        "  2. trace_*.json 可用于程序化分析(完整结构化数据)",
         "  3. monitor_details_*.csv 可导入 Excel 做透视分析",
+        "  4. rollback_steps_*.csv 可查看每一步回滚的执行细节(如有)",
         "",
         "如有疑问请联系运维团队。",
     ])

@@ -223,6 +223,18 @@ class GrayscaleDeployer:
 
                     all_snapshots.extend(phase_snapshots)
 
+                    rollback_result = {}
+                    rollback_report_for_trace = None
+
+                    if self.on_circuit_break:
+                        rollback_result = self.on_circuit_break(
+                            release_id=release_id,
+                            version=version,
+                            cb_event=cb_event,
+                            cb_detail=cb_result,
+                        )
+                        rollback_report_for_trace = rollback_result.get("report")
+
                     cb_trace_files = {}
                     try:
                         cb_trace_files = export_circuit_breaker_trace(
@@ -235,20 +247,15 @@ class GrayscaleDeployer:
                             },
                             export_dir="./exports/trace",
                             release_id=release_id,
+                            rollback_report=rollback_report_for_trace,
                         )
-                        logger.info("📦 熔断链路包已导出:")
+                        logger.info("[EXPORT] 熔断链路包已导出:")
                         for fmt, path in cb_trace_files.items():
-                            logger.info("   %-10s → %s", fmt, path)
+                            logger.info("   %-10s -> %s", fmt, path)
                     except Exception as e:
                         logger.warning("导出熔断链路包失败: %s", e)
 
                     if self.on_circuit_break:
-                        rollback_result = self.on_circuit_break(
-                            release_id=release_id,
-                            version=version,
-                            cb_event=cb_event,
-                            cb_detail=cb_result,
-                        )
                         return {
                             "success": False,
                             "circuit_breaker": True,

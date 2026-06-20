@@ -175,7 +175,17 @@ def cmd_sample(args):
             print(format_sample_info_detail(info))
             return info
         except (FileNotFoundError, ValueError) as e:
-            return {"error": str(e)}
+            return {
+                "success": False,
+                "blocked": True,
+                "blocked_reason": "sample_data_error",
+                "error_file_path": filename,
+                "error_detail": str(e),
+                "fix_suggestion": (
+                    "请使用 'python main.py sample list' 查看所有可用样例\n"
+                    "或确认文件路径正确 (.yaml/.yml 存 YAML, .json 存 JSON)"
+                ),
+            }
 
     elif args.sub_command == "validate":
         filename = args.filename
@@ -185,41 +195,86 @@ def cmd_sample(args):
             print("=" * 60)
             print(f"样例文件格式校验: {filename}")
             print("=" * 60)
-            print(f"  校验结果: {'✅ 通过' if result['valid'] else '❌ 不通过'}")
+            print(f"  校验结果: {'[PASS] 通过' if result['valid'] else '[FAIL] 不通过'}")
             print(f"  指标数量: {result.get('metric_count', 0)}"
                   f" (配置中预期: {result.get('expected_metric_count', 0)})")
 
             if result.get("issues"):
-                print("\n  🚨 格式错误:")
+                print("\n  [ERROR] 格式错误:")
                 for i in result["issues"]:
-                    print(f"    • {i}")
+                    print(f"    - {i}")
 
             if result.get("warnings"):
-                print("\n  ⚠️  警告:")
+                print("\n  [WARN] 警告:")
                 for w in result["warnings"]:
-                    print(f"    • {w}")
+                    print(f"    - {w}")
 
             if result["valid"] and not result.get("warnings"):
-                print("\n  🎉 样例文件格式正确，可直接用于发布校验")
+                print("\n  [OK] 样例文件格式正确，可直接用于发布校验")
 
             print("=" * 60)
             return result
         except (FileNotFoundError, ValueError) as e:
-            return {"error": str(e)}
+            return {
+                "success": False,
+                "valid": False,
+                "blocked": True,
+                "blocked_reason": "sample_data_error",
+                "error_detail": str(e),
+                "fix_suggestion": (
+                    "请检查文件路径是否正确，或使用 'python main.py sample list' 查看可用样例。\n"
+                    "若文件存在，请确认文件扩展名与内容格式一致 (.yaml 存 YAML, .json 存 JSON)。"
+                ),
+            }
 
     elif args.sub_command == "dry-run":
         filename = args.filename
         resolved = manager.resolve_path(filename)
-        if not resolved:
-            return {
-                "error": f"无法解析样例文件路径: {filename}\n"
-                         f"请使用 'python main.py sample list' 查看可用样例"
-            }
-
         release_id = f"DRY-RUN-{os.getpid()}-{datetime.now().strftime('%H%M%S')}"
         logger.info("=" * 60)
         logger.info("前置校验 DRY-RUN 模式 - 只校验不发布")
         logger.info("=" * 60)
+
+        if not resolved:
+            abs_path_candidate = os.path.abspath(filename)
+            in_dir_candidate = os.path.abspath(os.path.join("./sample_data", filename))
+            err_msg = (
+                f"样例数据文件不存在: 已尝试以下路径均未找到文件\n"
+                f"  - {abs_path_candidate}\n"
+                f"  - {in_dir_candidate}\n"
+                f"  (另外也尝试了自动补齐 .yaml/.yml/.json 后缀)"
+            )
+            logger.error(err_msg)
+            return {
+                "success": False,
+                "dry_run": True,
+                "blocked": True,
+                "blocked_at": "pre_check",
+                "blocked_reason": "sample_data_error",
+                "error_file_path": filename,
+                "error_tried_paths": [abs_path_candidate, in_dir_candidate],
+                "error_detail": err_msg,
+                "fix_suggestion": (
+                    "请使用 'python main.py sample list' 查看所有可用样例\n"
+                    "或确认文件路径正确、扩展名与内容格式一致 (.yaml/.yml 存 YAML, .json 存 JSON)"
+                ),
+                "result": {
+                    "release_id": release_id,
+                    "all_passed": False,
+                    "failed_count": 1,
+                    "items": [
+                        {
+                            "metric_key": "__sample_data_error__",
+                            "metric_name": "样例数据加载",
+                            "status": "fail",
+                            "is_pass": False,
+                            "critical": True,
+                            "error_detail": err_msg,
+                            "fix_suggestion": "检查文件路径或使用 sample list 查看可用样例",
+                        }
+                    ],
+                },
+            }
 
         try:
             thresholds = get_thresholds().get("pre_check", {})
@@ -232,21 +287,43 @@ def cmd_sample(args):
                 release_id=release_id,
                 target_parks=args.target_parks or None,
             )
-            detailed = checker.get_detailed_result(report)
 
             if checker.load_failure:
-                logger.error("❌ 样例数据加载失败")
+                logger.error("[BLOCKED] 样例数据加载失败")
                 return {
                     "success": False,
                     "dry_run": True,
                     "blocked": True,
-                    "blocked_reason": "样例数据加载失败",
-                    "load_error": checker.load_failure,
-                    "result": detailed,
+                    "blocked_at": "pre_check",
+                    "blocked_reason": "sample_data_error",
+                    "error_file_path": resolved,
+                    "error_detail": checker.load_failure,
+                    "fix_suggestion": (
+                        "请使用 'python main.py sample validate <文件名>' 校验文件格式\n"
+                        ".yaml/.yml 文件必须是标准 YAML；.json 文件必须是标准 JSON"
+                    ),
+                    "result": {
+                        "release_id": release_id,
+                        "all_passed": False,
+                        "failed_count": 1,
+                        "items": [
+                            {
+                                "metric_key": "__sample_data_error__",
+                                "metric_name": "样例数据加载",
+                                "status": "fail",
+                                "is_pass": False,
+                                "critical": True,
+                                "error_detail": checker.load_failure,
+                                "fix_suggestion": "使用 sample validate 校验格式",
+                            }
+                        ],
+                    },
                 }
 
+            detailed = checker.get_detailed_result(report)
+
             if report.all_passed:
-                logger.info("✅ DRY-RUN 通过: 所有前置校验指标达标，可进入审批流程")
+                logger.info("[PASS] DRY-RUN 通过: 所有前置校验指标达标，可进入审批流程")
                 return {
                     "success": True,
                     "dry_run": True,
@@ -255,19 +332,19 @@ def cmd_sample(args):
                     "result": detailed,
                 }
             else:
-                logger.error("❌ DRY-RUN 未通过: 发布将被阻断在准入阶段")
+                logger.error("[BLOCKED] DRY-RUN 未通过: 发布将被阻断在准入阶段")
                 failed = [i for i in report.items if not i.is_pass]
                 for item in failed:
                     gap = round(item.actual_value - item.threshold, 2)
                     logger.error(
-                        "  • %s: %s%s (阈值: %s%s, 差距: %+g%s)",
+                        "  * %s: %s%s (阈值: %s%s, 差距: %+g%s)",
                         item.metric_name,
                         item.actual_value, item.unit,
                         item.threshold, item.unit,
                         gap, item.unit,
                     )
                     if item.fix_suggestion:
-                        logger.error("    💡 修复建议: %s", item.fix_suggestion)
+                        logger.error("    [FIX] %s", item.fix_suggestion)
 
                 return {
                     "success": False,
@@ -275,15 +352,35 @@ def cmd_sample(args):
                     "all_passed": False,
                     "blocked": True,
                     "blocked_at": "pre_check",
+                    "blocked_reason": "threshold_not_met",
                     "failed_count": len(failed),
                     "result": detailed,
                 }
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("[BLOCKED] 样例数据加载异常: %s", e)
+            return {
+                "success": False,
+                "dry_run": True,
+                "blocked": True,
+                "blocked_at": "pre_check",
+                "blocked_reason": "sample_data_error",
+                "error_file_path": resolved,
+                "error_detail": str(e),
+                "fix_suggestion": (
+                    "请使用 'python main.py sample validate <文件名>' 校验文件格式\n"
+                    ".yaml/.yml 文件必须是标准 YAML；.json 文件必须是标准 JSON"
+                ),
+            }
         except Exception as e:
             logger.exception("DRY-RUN 执行异常")
             return {
                 "success": False,
                 "dry_run": True,
-                "error": str(e),
+                "blocked": True,
+                "blocked_at": "pre_check",
+                "blocked_reason": "unexpected_error",
+                "error_file_path": resolved,
+                "error_detail": str(e),
             }
 
     else:

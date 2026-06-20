@@ -315,13 +315,23 @@ class PreChecker:
 
     def run_pre_check(self, release_id: str, target_parks: Optional[List[str]] = None,
                       sample_data_path: Optional[str] = None) -> PreCheckReport:
+        # 如果调用方显式传入了 sample_data_path → 重新解析路径并强制严格模式
+        # 路径搜索优先级: 绝对路径 → 相对CWD → ./sample_data 目录 → 补后缀搜索
+        # 只要显式传了 sample_data_path 就 NEVER 退回随机指标
         if sample_data_path:
+            from utils.sample_data import resolve_sample_path
+            resolved = resolve_sample_path(sample_data_path)
+            if resolved:
+                effective_path = resolved
+            else:
+                effective_path = os.path.abspath(sample_data_path)
             self.data_source_type = "file"
-            self.sample_data_path = sample_data_path
+            self.sample_data_path = effective_path
             self.strict_mode = True
+            self._load_failure = None
             self.collector = MetricCollector(
                 data_source_type="file",
-                sample_data_path=sample_data_path,
+                sample_data_path=effective_path,
                 strict_mode=True,
             )
 
@@ -449,7 +459,7 @@ class PreChecker:
                 gap = round(actual_value - threshold, 2)
                 logger.info(
                     "%s %s: %s%s (阈值: %s%s, 差距: %+g%s) [样本量: %s, 周期: %s]",
-                    "✅" if is_pass else "❌",
+                    "[PASS]" if is_pass else "[FAIL]",
                     metric_config["name"],
                     actual_value, metric_config.get("unit", "%"),
                     threshold, metric_config.get("unit", "%"),
@@ -496,9 +506,9 @@ class PreChecker:
 
         logger.info("-" * 60)
         if all_passed:
-            logger.info("✅ 前置校验全部通过，可进入审批环节")
+            logger.info("[PASS] 前置校验全部通过，可进入审批环节")
         else:
-            logger.error("❌ 前置校验未通过，发布阻断在准入阶段")
+            logger.error("[FAIL] 前置校验未通过，发布阻断在准入阶段")
             logger.error("   未达标指标数: %d", len(critical_failures))
         logger.info("=" * 60)
 
@@ -532,13 +542,13 @@ class PreChecker:
         if self.statistical_period:
             sp = self.statistical_period
             lines.append(
-                f"📊 统计周期: {sp.get('start', '')[:10]} ~ {sp.get('end', '')[:10]} "
+                f"[PERIOD] 统计周期: {sp.get('start', '')[:10]} ~ {sp.get('end', '')[:10]} "
                 f"({sp.get('days', 7)}天)"
             )
             lines.append("")
 
         for item in items:
-            status_icon = "✅" if item.is_pass else "❌"
+            status_icon = "[OK]" if item.is_pass else "[FAIL]"
             gap = round(item.actual_value - item.threshold, 2)
 
             main_line = (
@@ -560,10 +570,10 @@ class PreChecker:
 
             err_detail = getattr(item, 'error_detail', None)
             if err_detail:
-                lines.append(f"   ❌ 错误: {err_detail}")
+                lines.append(f"   [ERROR] 错误: {err_detail}")
 
             if not item.is_pass and item.fix_suggestion:
-                lines.append(f"   💡 修复建议: {item.fix_suggestion}")
+                lines.append(f"   [FIX] 修复建议: {item.fix_suggestion}")
 
         return "\n".join(lines)
 
@@ -612,12 +622,16 @@ class PreChecker:
                 detail["extra_info"] = item.extra_info
             if hasattr(item, 'raw_data'):
                 rd = item.raw_data
-                detail["sample_size"] = rd.get("sample_size")
-                detail["period"] = rd.get("period")
-                if "data_points" in rd:
-                    detail["data_points"] = rd["data_points"]
+                if isinstance(rd, dict):
+                    detail["sample_size"] = rd.get("sample_size")
+                    detail["period"] = rd.get("period")
+                    if rd.get("data_points"):
+                        detail["data_points"] = rd["data_points"]
             if not item.is_pass:
                 detail["fix_suggestion"] = item.fix_suggestion
+            err_detail = getattr(item, 'error_detail', None)
+            if err_detail:
+                detail["error_detail"] = err_detail
             items_detail.append(detail)
 
         return {

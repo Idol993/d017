@@ -36,6 +36,15 @@ def run_full_deploy(version: str, previous_version: str = "",
     labels = labels or []
     target_parks = target_parks or []
 
+    # 样例数据路径统一解析: 绝对路径 → 相对CWD → ./sample_data → 补后缀
+    # 只要用户显式传了 sample_data_path，就 NEVER 退回随机指标
+    original_sample_path = sample_data_path
+    resolved_sample_path = None
+    if sample_data_path:
+        from utils.sample_data import resolve_sample_path
+        resolved_sample_path = resolve_sample_path(sample_data_path)
+        sample_data_path = resolved_sample_path or os.path.abspath(sample_data_path)
+
     init_database()
     notifier = Notifier()
     approval_engine = ApprovalEngine()
@@ -106,28 +115,48 @@ def run_full_deploy(version: str, previous_version: str = "",
 
         load_error = getattr(pre_checker, 'load_failure', None)
         if load_error:
-            logger.info("前置校验被阻断: 样例数据加载失败!")
-            logger.info("  错误原因: %s", load_error)
-            logger.info("  💡 请使用 'python main.py sample list' 查看可用样例")
-            logger.info("  💡 或使用 'python main.py sample validate <文件名>' 校验格式")
+            logger.info("=" * 60)
+            logger.info("[BLOCKED] 前置校验阻断: 样例数据加载失败")
+            logger.info("=" * 60)
+            logger.info("  发布单号:       %s", record.id)
+            logger.info("  阻断阶段:       pre_check (准入前置校验)")
+            logger.info("  阻断原因:       sample_data_error")
+            logger.info("  错误文件路径:   %s", sample_data_path)
+            logger.info("  错误详情:       %s", load_error)
+            logger.info("")
+            logger.info("[FIX] 修复建议:")
+            logger.info("  1. 运行 'python main.py sample list' 查看所有可用样例")
+            logger.info("  2. 运行 'python main.py sample validate <文件名>' 校验格式")
+            logger.info("  3. 确认 .yaml/.yml 文件是标准 YAML，.json 文件是标准 JSON")
+            logger.info("=" * 60)
             return {
                 "success": False,
                 "release_id": record.id,
                 "status": "pre_check_failed",
+                "version": version,
+                "blocked": True,
                 "blocked_at": "pre_check",
                 "blocked_reason": "sample_data_error",
+                "error_file_path": sample_data_path,
                 "error_detail": load_error,
+                "fix_suggestion": (
+                    "请使用 'python main.py sample list' 查看可用样例\n"
+                    "或使用 'python main.py sample validate <文件名>' 校验格式。\n"
+                    "扩展名与内容必须一致: .yaml/.yml 存 YAML，.json 存 JSON。"
+                ),
+                "release_status": record_dict["status"],
                 "suggestions": suggestions,
             }
 
         logger.info("前置校验未通过，发布被阻断在准入阶段!")
         logger.info("\n校验详情:")
         for item in pre_check_report.items:
-            status_icon = "✅" if (hasattr(item, 'passed') and item.passed) else "❌"
+            is_pass = getattr(item, 'is_pass', False) or getattr(item, 'passed', False)
+            status_icon = "[OK]" if is_pass else "[FAIL]"
             sample_size = getattr(item, 'sample_size', None) or 0
             period = getattr(item, 'period', None) or "-"
             trend = getattr(item, 'trend', None) or "-"
-            current_value = getattr(item, 'current_value', 0)
+            current_value = getattr(item, 'actual_value', getattr(item, 'current_value', 0))
             unit = getattr(item, 'unit', '') or ""
             logger.info(
                 "  %s %s: 当前=%s%s, 阈值=%s%s, 样本量=%s, 周期=%s, 趋势=%s",
@@ -138,19 +167,23 @@ def run_full_deploy(version: str, previous_version: str = "",
             )
             err_detail = getattr(item, 'error_detail', None)
             if err_detail:
-                logger.info("     错误: %s", err_detail)
+                logger.info("     [ERROR] %s", err_detail)
         logger.info("")
         for s in suggestions:
-            logger.info("  💡 %s: 当前值=%s, 差距=%s",
+            logger.info("  [FIX] %s: 当前值=%s, 差距=%s",
                         s["metric_name"], s.get("actual_value"), s.get("gap"))
-            logger.info("     修复建议: %s", s["fix_suggestion"])
+            logger.info("        修复建议: %s", s["fix_suggestion"])
 
         return {
             "success": False,
             "release_id": record.id,
             "status": "pre_check_failed",
-            "suggestions": suggestions,
+            "version": version,
+            "blocked": True,
             "blocked_at": "pre_check",
+            "blocked_reason": "threshold_not_met",
+            "release_status": record_dict["status"],
+            "suggestions": suggestions,
         }
 
     record_dict["status"] = ReleaseStatus.PRE_CHECK_PASSED.value
@@ -159,14 +192,18 @@ def run_full_deploy(version: str, previous_version: str = "",
     summary = pre_checker._generate_check_summary(pre_check_report.items, True)
     notifier.notify_pre_check_result(record.id, version, True, summary)
 
-    logger.info("\n✅ 前置校验全部通过!")
+    logger.info("\n[PASS] 前置校验全部通过!")
     for item in pre_check_report.items:
+        current_value = getattr(item, 'actual_value', getattr(item, 'current_value', 0))
+        sample_size = getattr(item, 'sample_size', None) or 0
+        period = getattr(item, 'period', None) or "-"
+        unit = getattr(item, 'unit', '') or ""
         logger.info(
-            "  · %s: 当前=%.2f%s, 阈值=%.2f%s, 样本量=%d, 周期=%s",
+            "  * %s: 当前=%.2f%s, 阈值=%.2f%s, 样本量=%s, 周期=%s",
             item.metric_name,
-            item.current_value, item.unit or "",
-            item.threshold, item.unit or "",
-            item.sample_size or 0, item.period or "-",
+            current_value, unit,
+            item.threshold, unit,
+            sample_size, period,
         )
 
     # ========== 阶段2: 分级审批 ==========
@@ -202,11 +239,11 @@ def run_full_deploy(version: str, previous_version: str = "",
                             "自动审批(演示模式)", release_type=release_type,
                         )
                         if not result["success"]:
-                            logger.warning("  ⚠️  审批失败: %s", result["message"])
+                            logger.warning("  [WARN] 审批失败: %s", result["message"])
                             continue
 
                         logger.info(
-                            "  ✅ 级别 %d: %s (%s) 已审批通过",
+                            "  [OK] 级别 %d: %s (%s) 已审批通过",
                             level, ar.approver_name, ar.role,
                         )
 
@@ -215,7 +252,15 @@ def run_full_deploy(version: str, previous_version: str = "",
                             record_dict["approval_records"] = [r.to_dict() for r in approval_records]
                             save_release_record(record_dict)
                             logger.info("审批被驳回!")
-                            return {"success": False, "release_id": record.id, "status": "approval_rejected"}
+                            return {
+                                "success": False,
+                                "release_id": record.id,
+                                "version": version,
+                                "status": "approval_rejected",
+                                "blocked": True,
+                                "blocked_at": "approval",
+                                "blocked_reason": "approval_rejected",
+                            }
 
                         if result["flow_result"]["status"] == "approved":
                             logger.info("所有审批通过!")
@@ -244,7 +289,7 @@ def run_full_deploy(version: str, previous_version: str = "",
     record_dict["status"] = ReleaseStatus.APPROVAL_APPROVED.value
     record_dict["approval_records"] = [r.to_dict() for r in approval_records]
     save_release_record(record_dict)
-    logger.info("✅ 审批流程完成!")
+    logger.info("[OK] 审批流程完成!")
 
     # ========== 阶段3: 灰度发布 + 监控 + 熔断 ==========
     logger.info("\n" + "=" * 60)
@@ -257,7 +302,7 @@ def run_full_deploy(version: str, previous_version: str = "",
     rollback_executor = RollbackExecutor(notifier=notifier)
 
     def on_circuit_break(release_id, version, cb_event, cb_detail):
-        logger.warning("⚠️  熔断触发! 执行自动回滚...")
+        logger.warning("[CIRCUIT] 熔断触发! 执行自动回滚...")
         record = get_release_record(release_id)
         prev_version = record.get("previous_version", "") if record else ""
         return rollback_executor.execute_rollback(
@@ -300,11 +345,15 @@ def run_full_deploy(version: str, previous_version: str = "",
             )
             logger.info("\n%s", report_text)
 
-        logger.info("⚠️  熔断回滚完成!")
+        logger.info("[ROLLBACK] 熔断回滚完成!")
         return {
             "success": False,
             "release_id": record.id,
+            "version": version,
             "status": "circuit_breaker_rolled_back",
+            "blocked": True,
+            "blocked_at": "grayscale",
+            "blocked_reason": "circuit_breaker_triggered",
             "grayscale_result": grayscale_result,
         }
 
@@ -330,7 +379,7 @@ def run_full_deploy(version: str, previous_version: str = "",
     save_release_record(record_dict)
 
     logger.info("\n" + "=" * 60)
-    logger.info("🎉 发布全量完成!")
+    logger.info("[DONE] 发布全量完成!")
     logger.info("=" * 60)
     logger.info("发布单号: %s", record.id)
     logger.info("版本号: %s", version)

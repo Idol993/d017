@@ -223,18 +223,18 @@ def format_sample_info_detail(info: Dict[str, Any]) -> str:
 
     period = info.get("statistical_period", {})
     lines.append("")
-    lines.append("  📊 统计周期:")
+    lines.append("  [PERIOD] 统计周期:")
     lines.append(f"    起始时间:   {period.get('start', 'N/A')}")
     lines.append(f"    结束时间:   {period.get('end', 'N/A')}")
     lines.append(f"    周期天数:   {period.get('days', 0)} 天")
 
     lines.append("")
-    lines.append(f"  🏭 目标园区 ({info.get('park_count', 0)} 个):")
+    lines.append(f"  [PARKS] 目标园区 ({info.get('park_count', 0)} 个):")
     for park in info.get("target_parks", []):
-        lines.append(f"    · {park}")
+        lines.append(f"    - {park}")
 
     lines.append("")
-    lines.append(f"  📈 指标明细 ({info.get('metric_count', 0)} 项):")
+    lines.append(f"  [METRICS] 指标明细 ({info.get('metric_count', 0)} 项):")
     lines.append("  " + "-" * 76)
     lines.append(
         f"  {'指标名':<22} {'当前值':>8} {'单位':<8} {'样本量':>8} "
@@ -245,9 +245,9 @@ def format_sample_info_detail(info: Dict[str, Any]) -> str:
     for m in info.get("metrics", []):
         value_str = f"{m.get('value', 'N/A'):.2f}" if isinstance(m.get("value"), (int, float)) else str(m.get("value", "N/A"))
         trend_icon = {
-            "improving": "↑ 改善",
-            "stable": "→ 稳定",
-            "declining": "↓ 恶化",
+            "improving": "UP改善",
+            "stable": "--稳定",
+            "declining": "DN恶化",
         }.get(m.get("trend", ""), m.get("trend", "-"))
 
         lines.append(
@@ -320,3 +320,58 @@ class SampleDataManager:
                 return os.path.abspath(in_dir_ext)
 
         return None
+
+
+def resolve_sample_path(filename_or_path: str,
+                         data_dir: str = "./sample_data",
+                         extensions: Optional[List[str]] = None) -> Optional[str]:
+    """模块级样例路径解析器 —— 供 deploy/PreChecker 等任意入口使用。
+
+    搜索优先级:
+      1. 绝对路径且存在
+      2. 相对路径(相对于当前工作目录)且存在
+      3. 在 data_dir 目录下的同名文件
+      4. 自动补齐 .yaml/.yml/.json 后缀再在 data_dir 搜索
+
+    Returns:
+        解析到的绝对路径；如果所有位置都找不到，返回 None。
+    """
+    if not filename_or_path:
+        return None
+
+    if extensions is None:
+        extensions = SAMPLE_DATA_EXTENSIONS
+
+    filename_or_path = str(filename_or_path).strip().strip('"').strip("'")
+
+    if os.path.isabs(filename_or_path):
+        if os.path.exists(filename_or_path):
+            return os.path.abspath(filename_or_path)
+        return None
+
+    if os.path.exists(filename_or_path):
+        return os.path.abspath(filename_or_path)
+
+    in_dir = os.path.join(data_dir, filename_or_path)
+    if os.path.exists(in_dir):
+        return os.path.abspath(in_dir)
+
+    basename_no_ext = os.path.splitext(filename_or_path)[0]
+    if basename_no_ext and basename_no_ext != filename_or_path:
+        for ext in extensions:
+            with_ext = basename_no_ext + ext
+            if os.path.exists(with_ext):
+                return os.path.abspath(with_ext)
+            in_dir_ext = os.path.join(data_dir, with_ext)
+            if os.path.exists(in_dir_ext):
+                return os.path.abspath(in_dir_ext)
+
+    for ext in extensions:
+        with_ext = filename_or_path + ext
+        if os.path.exists(with_ext):
+            return os.path.abspath(with_ext)
+        in_dir_ext = os.path.join(data_dir, with_ext)
+        if os.path.exists(in_dir_ext):
+            return os.path.abspath(in_dir_ext)
+
+    return None
