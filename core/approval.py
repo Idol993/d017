@@ -104,7 +104,8 @@ class ApprovalEngine:
 
     def process_approval(self, release_id: str, records: List[ApprovalRecord],
                           approver_id: str, approved: bool,
-                          comment: str = "") -> Dict:
+                          comment: str = "",
+                          release_type: Optional[ReleaseType] = None) -> Dict:
         target_record = None
         for record in records:
             if record.approver_id == approver_id and record.status == ApprovalStatus.PENDING:
@@ -116,6 +117,23 @@ class ApprovalEngine:
                 "success": False,
                 "message": f"未找到审批人 {approver_id} 的待审批记录",
             }
+
+        if release_type == ReleaseType.NORMAL:
+            levels = sorted(set(r.level for r in records))
+            approved_levels = sorted(set(r.level for r in records if r.status == ApprovalStatus.APPROVED))
+
+            target_level = target_record.level
+            for level in levels:
+                if level < target_level and level not in approved_levels:
+                    level_records = [r for r in records if r.level == level]
+                    pending_count = len([r for r in level_records if r.status == ApprovalStatus.PENDING])
+                    if pending_count > 0:
+                        return {
+                            "success": False,
+                            "message": f"串行审批模式下，必须先完成级别 {level} 的审批，"
+                                       f"当前还有 {pending_count} 人待审批，"
+                                       f"不能跳过级别 {level} 直接审批级别 {target_level}",
+                        }
 
         if approved:
             target_record.status = ApprovalStatus.APPROVED
@@ -135,7 +153,7 @@ class ApprovalEngine:
                    f"级别={target_record.level}, 意见={comment or '无'}",
         )
 
-        flow_result = self._evaluate_approval_flow(release_id, records)
+        flow_result = self._evaluate_approval_flow(release_id, records, release_type)
         return {
             "success": True,
             "record": target_record.to_dict(),
@@ -143,7 +161,8 @@ class ApprovalEngine:
         }
 
     def _evaluate_approval_flow(self, release_id: str,
-                                 records: List[ApprovalRecord]) -> Dict:
+                                 records: List[ApprovalRecord],
+                                 release_type: Optional[ReleaseType] = None) -> Dict:
         pending_records = [r for r in records if r.status == ApprovalStatus.PENDING]
         rejected_records = [r for r in records if r.status == ApprovalStatus.REJECTED]
         approved_records = [r for r in records if r.status == ApprovalStatus.APPROVED]
@@ -161,8 +180,11 @@ class ApprovalEngine:
                 "message": "所有审批已通过",
             }
 
-        levels = set(r.level for r in records)
-        type_key = "hotfix" if any(r.level == 1 for r in records) and len(levels) == 1 else "normal"
+        if release_type is not None:
+            type_key = "normal" if release_type == ReleaseType.NORMAL else "hotfix"
+        else:
+            levels = set(r.level for r in records)
+            type_key = "hotfix" if any(r.level == 1 for r in records) and len(levels) == 1 else "normal"
         type_config = self.matrix_config.get("release_types", {}).get(type_key, {})
         approval_mode = type_config.get("approval_mode", "serial")
 

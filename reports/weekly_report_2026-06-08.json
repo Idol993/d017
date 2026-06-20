@@ -1,5 +1,5 @@
 {
-  "id": "WKR-20260620094223",
+  "id": "WKR-20260620100954",
   "week_start": "2026-06-08",
   "week_end": "2026-06-14",
   "total_releases": 0,
@@ -14,9 +14,11 @@
     },
     "by_park": {},
     "daily_counts": {},
+    "daily_success": {},
+    "daily_rollback": {},
     "pre_check_failed": 0,
     "approval_rejected": 0,
     "rollback_records": []
   },
-  "generated_at": "2026-06-20T09:42:23.010392"
+  "generated_at": "2026-06-20T10:09:54.712723"
 }

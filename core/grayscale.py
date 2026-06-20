@@ -5,7 +5,11 @@ from typing import Callable, Dict, List, Optional
 
 import yaml
 
-from core.monitor import BusinessMonitor
+from core.monitor import (
+    BusinessMonitor,
+    export_monitor_details,
+    export_circuit_breaker_trace,
+)
 from models.schemas import ReleaseStatus, CircuitBreakerEvent
 from utils.audit_log import write_audit_log
 from utils.notify import Notifier
@@ -40,6 +44,7 @@ class GrayscaleDeployer:
         self.deploy_executor = deploy_executor or self._default_deploy_executor
         self.on_circuit_break = on_circuit_break
         self._paused = False
+        self.deploy_completed_at: Optional[str] = None
 
     def _default_deploy_executor(self, phase_config: dict, release_id: str,
                                   version: str) -> bool:
@@ -61,10 +66,24 @@ class GrayscaleDeployer:
             )
         return True
 
+    def _get_recent_snapshots(self, all_snapshots: List, phase_snapshots: List,
+                               count: int = 5) -> List:
+        combined = all_snapshots + phase_snapshots
+        recent = combined[-count:] if len(combined) >= count else combined
+        return recent
+
     def execute_grayscale(self, release_id: str, version: str,
                            strategy_name: Optional[str] = None,
                            target_parks: Optional[List[str]] = None,
-                           max_rounds_per_phase: int = 6) -> Dict:
+                           max_rounds_per_phase: int = 6,
+                           demo_mode: Optional[bool] = None) -> Dict:
+        if demo_mode is not None:
+            self.monitor.demo_mode = demo_mode
+            if demo_mode:
+                self.monitor.interval_seconds = self.monitor.settings.get(
+                    "monitor", {}
+                ).get("demo_mode", {}).get("interval_seconds", 2)
+
         strategy_key = strategy_name or self.strategy_config.get("default_strategy", "by_zone")
         strategy = self.strategy_config.get("strategies", {}).get(strategy_key)
 
@@ -74,16 +93,28 @@ class GrayscaleDeployer:
 
         phases = strategy.get("phases", [])
         logger.info(
-            "开始灰度发布: release_id=%s, version=%s, 策略=%s, 阶段数=%d",
-            release_id, version, strategy.get("name", strategy_key), len(phases),
+            "=" * 60
         )
+        logger.info(
+            "灰度发布启动: release_id=%s, version=%s",
+            release_id, version,
+        )
+        logger.info(
+            "策略: %s, 阶段数: %d, 监控间隔: %ds, 演示模式: %s",
+            strategy.get("name", strategy_key),
+            len(phases),
+            self.monitor.interval_seconds,
+            self.monitor.demo_mode,
+        )
+        logger.info("=" * 60)
 
         write_audit_log(
             release_id=release_id,
             action="grayscale_started",
             actor="system",
             actor_role="automated",
-            detail=f"灰度发布开始: 策略={strategy.get('name')}, 阶段数={len(phases)}",
+            detail=f"灰度发布开始: 策略={strategy.get('name')}, 阶段数={len(phases)}, "
+                   f"监控间隔={self.monitor.interval_seconds}s, 演示模式={self.monitor.demo_mode}",
         )
 
         all_snapshots = []
@@ -98,11 +129,13 @@ class GrayscaleDeployer:
             traffic_percent = phase.get("traffic_percent", 0)
             monitor_rounds = phase.get("monitor_rounds", max_rounds_per_phase)
             auto_advance = phase.get("auto_advance", True)
+            is_final_phase = phase_index == len(phases) - 1
 
+            logger.info("")
             logger.info("=" * 60)
             logger.info(
-                "灰度阶段 %d/%d: %s (流量: %d%%)",
-                phase_index + 1, len(phases), phase_name, traffic_percent,
+                "▶ 阶段 %d/%d: %s (流量: %d%%, 监控轮次: %d)",
+                phase_index + 1, len(phases), phase_name, traffic_percent, monitor_rounds,
             )
             logger.info("=" * 60)
 
@@ -130,21 +163,33 @@ class GrayscaleDeployer:
             circuit_breaker_triggered = False
 
             for round_num in range(1, monitor_rounds + 1):
-                logger.info("--- 监控轮次 %d/%d ---", round_num, monitor_rounds)
+                logger.debug("--- 监控轮次 %d/%d ---", round_num, monitor_rounds)
 
                 snapshot = self.monitor.create_snapshot(
                     release_id=release_id,
                     phase_name=phase_name,
                     round_number=round_num,
+                    total_rounds=monitor_rounds,
                     target_parks=target_parks,
                 )
                 phase_snapshots.append(snapshot)
 
-                cb_result = self.monitor.check_circuit_breaker(snapshot)
+                recent_snapshots = self._get_recent_snapshots(
+                    all_snapshots, phase_snapshots, count=5
+                )
+
+                cb_result = self.monitor.check_circuit_breaker(
+                    snapshot, recent_snapshots=recent_snapshots
+                )
                 if cb_result:
-                    logger.warning("熔断触发! 指标: %s, 值: %.2f",
-                                   cb_result["trigger_metric_name"],
-                                   cb_result["trigger_value"])
+                    print("", flush=True)
+                    logger.warning(
+                        "⚠️  熔断触发! 阶段=%s, 轮次=%d, 指标=%s, 值=%.2f, 阈值=%.2f",
+                        phase_name, round_num,
+                        cb_result["trigger_metric_name"],
+                        cb_result["trigger_value"],
+                        cb_result["threshold"],
+                    )
 
                     circuit_breaker_triggered = True
 
@@ -171,11 +216,31 @@ class GrayscaleDeployer:
                         action="circuit_breaker_triggered",
                         actor="system",
                         actor_role="automated",
-                        detail=f"熔断触发: 指标={cb_result['trigger_metric_name']}, "
+                        detail=f"熔断触发: 阶段={phase_name}, 轮次={round_num}, "
+                               f"指标={cb_result['trigger_metric_name']}, "
                                f"值={cb_result['trigger_value']}, 阈值={cb_result['threshold']}",
                     )
 
                     all_snapshots.extend(phase_snapshots)
+
+                    cb_trace_files = {}
+                    try:
+                        cb_trace_files = export_circuit_breaker_trace(
+                            snapshots=all_snapshots,
+                            circuit_breaker_result=cb_result,
+                            grayscale_result={
+                                "completed_phases": completed_phases,
+                                "current_phase_index": phase_index,
+                                "strategy_name": strategy.get("name", strategy_key),
+                            },
+                            export_dir="./exports/trace",
+                            release_id=release_id,
+                        )
+                        logger.info("📦 熔断链路包已导出:")
+                        for fmt, path in cb_trace_files.items():
+                            logger.info("   %-10s → %s", fmt, path)
+                    except Exception as e:
+                        logger.warning("导出熔断链路包失败: %s", e)
 
                     if self.on_circuit_break:
                         rollback_result = self.on_circuit_break(
@@ -193,6 +258,7 @@ class GrayscaleDeployer:
                             "completed_phases": completed_phases,
                             "current_phase_index": phase_index,
                             "all_snapshots": [s.to_dict() for s in all_snapshots],
+                            "trace_exports": cb_trace_files,
                         }
 
                     return {
@@ -203,10 +269,25 @@ class GrayscaleDeployer:
                         "completed_phases": completed_phases,
                         "current_phase_index": phase_index,
                         "all_snapshots": [s.to_dict() for s in all_snapshots],
+                        "trace_exports": cb_trace_files,
                     }
 
-                logger.info("  监控正常，继续等待下一轮")
+                if round_num < monitor_rounds:
+                    self.monitor.wait_for_next_round(
+                        phase_name=phase_name,
+                        round_number=round_num,
+                        total_rounds=monitor_rounds,
+                        metrics=snapshot.metrics,
+                    )
+                else:
+                    self.monitor.print_progress(
+                        phase_name=phase_name,
+                        round_number=round_num,
+                        total_rounds=monitor_rounds,
+                        metrics=snapshot.metrics,
+                    )
 
+            print("", flush=True)
             all_snapshots.extend(phase_snapshots)
             completed_phases.append({
                 "phase_name": phase_name,
@@ -214,6 +295,7 @@ class GrayscaleDeployer:
                 "traffic_percent": traffic_percent,
                 "monitor_rounds": monitor_rounds,
                 "status": "completed",
+                "is_final_phase": is_final_phase,
             })
 
             write_audit_log(
@@ -221,13 +303,17 @@ class GrayscaleDeployer:
                 action="grayscale_phase_completed",
                 actor="system",
                 actor_role="automated",
-                detail=f"灰度阶段完成: {phase_name}, 流量={traffic_percent}%",
+                detail=f"灰度阶段完成: {phase_name}, 流量={traffic_percent}%, 监控轮次={monitor_rounds}",
             )
 
-            logger.info("灰度阶段 [%s] 完成，所有监控指标正常", phase_name)
+            logger.info("✅ 阶段 [%s] 完成，所有监控指标正常", phase_name)
 
-            if not auto_advance and phase_index < len(phases) - 1:
-                logger.info("阶段 [%s] 需手动确认才能继续，灰度发布暂停", phase_name)
+            if is_final_phase:
+                self.deploy_completed_at = datetime.now().isoformat()
+                logger.info("🎉 全量发布完成，时间: %s", self.deploy_completed_at)
+
+            if not auto_advance and not is_final_phase:
+                logger.info("⏸ 阶段 [%s] 需手动确认才能继续，灰度发布暂停", phase_name)
                 self._paused = True
                 return {
                     "success": False,
@@ -247,12 +333,29 @@ class GrayscaleDeployer:
         )
 
         self.notifier.notify_deploy_success(release_id, version)
-        logger.info("灰度发布全量完成: release_id=%s, version=%s", release_id, version)
+        logger.info("=" * 60)
+        logger.info("🎉 灰度发布全量完成! release_id=%s, version=%s", release_id, version)
+        logger.info("=" * 60)
+
+        monitor_exports = {}
+        try:
+            monitor_exports = export_monitor_details(
+                snapshots=all_snapshots,
+                export_dir="./exports/monitor",
+                release_id=release_id,
+            )
+            logger.info("📊 监控明细已导出:")
+            for fmt, path in monitor_exports.items():
+                logger.info("   %-6s → %s", fmt.upper(), path)
+        except Exception as e:
+            logger.warning("导出监控明细失败: %s", e)
 
         return {
             "success": True,
+            "deploy_completed_at": self.deploy_completed_at,
             "completed_phases": completed_phases,
             "all_snapshots": [s.to_dict() for s in all_snapshots],
+            "monitor_exports": monitor_exports,
         }
 
     def pause(self):

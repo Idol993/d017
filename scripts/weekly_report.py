@@ -27,10 +27,14 @@ def generate_weekly_report(week_start: str = None, week_end: str = None) -> dict
 
     print(result.get("text_report", ""))
 
-    if result.get("csv_path"):
-        logger.info("CSV 报表已导出: %s", result["csv_path"])
-    if result.get("json_path"):
-        logger.info("JSON 报表已导出: %s", result["json_path"])
+    export_files = result.get("export_files", {})
+    if export_files:
+        logger.info("=" * 60)
+        logger.info("📄 所有导出文件路径:")
+        logger.info("=" * 60)
+        for fmt, path in sorted(export_files.items()):
+            logger.info("  %-6s → %s", fmt.upper(), os.path.abspath(path))
+        logger.info("=" * 60)
 
     return result
 
@@ -63,7 +67,7 @@ def query_and_export(query_type: str = "release", format: str = "json",
 
     export_path = service.export_records(records, format=format, output_path=output)
 
-    logger.info("查询结果: %d 条记录, 导出至: %s", len(records), export_path)
+    logger.info("查询结果: %d 条记录, 导出至: %s", len(records), os.path.abspath(export_path))
 
     for record in records[:10]:
         if query_type == "release":
@@ -75,7 +79,7 @@ def query_and_export(query_type: str = "release", format: str = "json",
 
     return {
         "total": len(records),
-        "export_path": export_path,
+        "export_path": os.path.abspath(export_path),
         "format": format,
     }
 
@@ -91,7 +95,9 @@ if __name__ == "__main__":
     report_parser.add_argument("--week-end", default=None, help="周结束日期(YYYY-MM-DD)")
 
     query_parser = subparsers.add_parser("query", help="查询与导出")
-    query_parser.add_argument("--type", default="release", choices=["release", "audit", "integrity"], help="查询类型")
+    query_parser.add_argument("--query-type", default="release",
+                              choices=["release", "audit", "integrity"],
+                              help="查询类型")
     query_parser.add_argument("--format", default="json", choices=["json", "csv"], help="导出格式")
     query_parser.add_argument("--status", default=None, help="状态筛选")
     query_parser.add_argument("--version", default=None, help="版本号筛选")
@@ -109,7 +115,7 @@ if __name__ == "__main__":
         )
     elif args.command == "query":
         result = query_and_export(
-            query_type=args.type, format=args.format,
+            query_type=args.query_type, format=args.format,
             status=args.status, version=args.version,
             park_id=args.park_id, start_time=args.start_time,
             end_time=args.end_time, limit=args.limit,

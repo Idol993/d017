@@ -2,6 +2,8 @@ import json
 import logging
 import sys
 import os
+from datetime import datetime
+from typing import Optional, List, Dict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -10,7 +12,7 @@ from core.grayscale import GrayscaleDeployer
 from core.monitor import BusinessMonitor
 from core.pre_check import PreChecker
 from core.rollback import RollbackExecutor
-from models.schemas import ReleaseRecord, ReleaseStatus, ReleaseType
+from models.schemas import ReleaseRecord, ReleaseStatus, ReleaseType, ApprovalStatus
 from utils.audit_log import write_audit_log
 from utils.db import init_database, save_release_record, get_release_record
 from utils.notify import Notifier
@@ -28,7 +30,9 @@ def run_full_deploy(version: str, previous_version: str = "",
                      description: str = "", hotfix_reason: str = "",
                      grayscale_strategy: str = "by_zone",
                      target_parks: list = None,
-                     auto_approve: bool = False) -> dict:
+                     auto_approve: bool = False,
+                     sample_data_path: Optional[str] = None,
+                     demo_mode: bool = False) -> dict:
     labels = labels or []
     target_parks = target_parks or []
 
@@ -63,6 +67,10 @@ def run_full_deploy(version: str, previous_version: str = "",
     logger.info("版本号: %s → %s", previous_version, version)
     logger.info("发布类型: %s", release_type.value)
     logger.info("申请人: %s", applicant)
+    if sample_data_path:
+        logger.info("前置校验数据源: %s", sample_data_path)
+    if demo_mode:
+        logger.info("演示模式: 已启用 (灰度监控间隔缩短)")
 
     write_audit_log(
         release_id=record.id,
@@ -81,7 +89,9 @@ def run_full_deploy(version: str, previous_version: str = "",
     save_release_record(record_dict)
 
     pre_checker = PreChecker()
-    pre_check_report = pre_checker.run_pre_check(record.id, target_parks)
+    pre_check_report = pre_checker.run_pre_check(
+        record.id, target_parks, sample_data_path=sample_data_path
+    )
 
     record_dict["pre_check_report"] = pre_check_report.to_dict()
 
@@ -94,16 +104,29 @@ def run_full_deploy(version: str, previous_version: str = "",
 
         notifier.notify_pre_check_result(record.id, version, False, summary)
 
-        logger.info("前置校验未通过，发布被阻断!")
+        logger.info("前置校验未通过，发布被阻断在准入阶段!")
+        logger.info("\n校验详情:")
+        for item in pre_check_report.items:
+            status_icon = "✅" if item.passed else "❌"
+            logger.info(
+                "  %s %s: 当前=%.2f%s, 阈值=%.2f%s, 样本量=%d, 周期=%s, 趋势=%s",
+                status_icon, item.metric_name,
+                item.current_value, item.unit or "",
+                item.threshold, item.unit or "",
+                item.sample_size or 0, item.period or "-",
+                item.trend or "-",
+            )
+        logger.info("")
         for s in suggestions:
-            logger.info("  - %s: 当前值=%.2f, 差距=%.2f", s["metric_name"], s["actual_value"], s["gap"])
-            logger.info("    修复建议: %s", s["fix_suggestion"])
+            logger.info("  💡 %s: 当前值=%.2f, 差距=%.2f", s["metric_name"], s["actual_value"], s["gap"])
+            logger.info("     修复建议: %s", s["fix_suggestion"])
 
         return {
             "success": False,
             "release_id": record.id,
             "status": "pre_check_failed",
             "suggestions": suggestions,
+            "blocked_at": "pre_check",
         }
 
     record_dict["status"] = ReleaseStatus.PRE_CHECK_PASSED.value
@@ -111,7 +134,16 @@ def run_full_deploy(version: str, previous_version: str = "",
 
     summary = pre_checker._generate_check_summary(pre_check_report.items, True)
     notifier.notify_pre_check_result(record.id, version, True, summary)
-    logger.info("前置校验通过!")
+
+    logger.info("\n✅ 前置校验全部通过!")
+    for item in pre_check_report.items:
+        logger.info(
+            "  · %s: 当前=%.2f%s, 阈值=%.2f%s, 样本量=%d, 周期=%s",
+            item.metric_name,
+            item.current_value, item.unit or "",
+            item.threshold, item.unit or "",
+            item.sample_size or 0, item.period or "-",
+        )
 
     # ========== 阶段2: 分级审批 ==========
     logger.info("\n" + "=" * 60)
@@ -133,27 +165,46 @@ def run_full_deploy(version: str, previous_version: str = "",
             record.id, approval_records, effective_hotfix_reason,
         )
     else:
-        for ar in approval_records:
-            if auto_approve:
-                result = approval_engine.process_approval(
-                    record.id, approval_records, ar.approver_id, True, "自动审批(演示模式)"
-                )
-                if result["flow_result"]["status"] == "rejected":
-                    record_dict["status"] = ReleaseStatus.APPROVAL_REJECTED.value
-                    record_dict["approval_records"] = [r.to_dict() for r in approval_records]
-                    save_release_record(record_dict)
-                    logger.info("审批被驳回!")
-                    return {"success": False, "release_id": record.id, "status": "approval_rejected"}
+        if auto_approve:
+            levels = sorted(set(r.level for r in approval_records))
+            logger.info("自动审批模式 - 按层级顺序审批: %s", levels)
+
+            for level in levels:
+                level_records = [r for r in approval_records if r.level == level]
+                for ar in level_records:
+                    if ar.status == ApprovalStatus.PENDING:
+                        result = approval_engine.process_approval(
+                            record.id, approval_records, ar.approver_id, True,
+                            "自动审批(演示模式)", release_type=release_type,
+                        )
+                        if not result["success"]:
+                            logger.warning("  ⚠️  审批失败: %s", result["message"])
+                            continue
+
+                        logger.info(
+                            "  ✅ 级别 %d: %s (%s) 已审批通过",
+                            level, ar.approver_name, ar.role,
+                        )
+
+                        if result["flow_result"]["status"] == "rejected":
+                            record_dict["status"] = ReleaseStatus.APPROVAL_REJECTED.value
+                            record_dict["approval_records"] = [r.to_dict() for r in approval_records]
+                            save_release_record(record_dict)
+                            logger.info("审批被驳回!")
+                            return {"success": False, "release_id": record.id, "status": "approval_rejected"}
+
+                        if result["flow_result"]["status"] == "approved":
+                            logger.info("所有审批通过!")
+                            break
 
                 if result["flow_result"]["status"] == "approved":
-                    logger.info("所有审批通过!")
                     break
-            else:
+        else:
+            for ar in approval_records:
                 notifier.notify_approval_required(
                     record.id, version, ar.approver_name, ar.role, release_type.value,
                 )
 
-        if not auto_approve:
             pending = approval_engine.get_pending_approvals(approval_records)
             record_dict["approval_records"] = [r.to_dict() for r in approval_records]
             save_release_record(record_dict)
@@ -169,7 +220,7 @@ def run_full_deploy(version: str, previous_version: str = "",
     record_dict["status"] = ReleaseStatus.APPROVAL_APPROVED.value
     record_dict["approval_records"] = [r.to_dict() for r in approval_records]
     save_release_record(record_dict)
-    logger.info("审批流程完成!")
+    logger.info("✅ 审批流程完成!")
 
     # ========== 阶段3: 灰度发布 + 监控 + 熔断 ==========
     logger.info("\n" + "=" * 60)
@@ -182,7 +233,7 @@ def run_full_deploy(version: str, previous_version: str = "",
     rollback_executor = RollbackExecutor(notifier=notifier)
 
     def on_circuit_break(release_id, version, cb_event, cb_detail):
-        logger.warning("熔断触发! 执行自动回滚...")
+        logger.warning("⚠️  熔断触发! 执行自动回滚...")
         record = get_release_record(release_id)
         prev_version = record.get("previous_version", "") if record else ""
         return rollback_executor.execute_rollback(
@@ -194,7 +245,7 @@ def run_full_deploy(version: str, previous_version: str = "",
             target_parks=target_parks or None,
         )
 
-    monitor = BusinessMonitor()
+    monitor = BusinessMonitor(demo_mode=demo_mode)
     deployer = GrayscaleDeployer(
         monitor=monitor,
         notifier=notifier,
@@ -206,6 +257,7 @@ def run_full_deploy(version: str, previous_version: str = "",
         version=version,
         strategy_name=grayscale_strategy,
         target_parks=target_parks or None,
+        demo_mode=demo_mode,
     )
 
     if grayscale_result.get("circuit_breaker"):
@@ -224,7 +276,7 @@ def run_full_deploy(version: str, previous_version: str = "",
             )
             logger.info("\n%s", report_text)
 
-        logger.info("熔断回滚完成!")
+        logger.info("⚠️  熔断回滚完成!")
         return {
             "success": False,
             "release_id": record.id,
@@ -244,13 +296,21 @@ def run_full_deploy(version: str, previous_version: str = "",
             "message": grayscale_result.get("message", "灰度发布暂停，等待手动确认"),
         }
 
+    deploy_completed_at = grayscale_result.get("deploy_completed_at", "")
+    if not deploy_completed_at:
+        deploy_completed_at = datetime.now().isoformat()
+
     record_dict["status"] = ReleaseStatus.DEPLOYED.value
-    record_dict["deployed_at"] = record_dict.get("updated_at", "")
+    record_dict["deployed_at"] = deploy_completed_at
     record_dict["monitor_snapshots"] = grayscale_result.get("all_snapshots", [])
     save_release_record(record_dict)
 
+    logger.info("\n" + "=" * 60)
+    logger.info("🎉 发布全量完成!")
     logger.info("=" * 60)
-    logger.info("发布完成! release_id=%s, version=%s", record.id, version)
+    logger.info("发布单号: %s", record.id)
+    logger.info("版本号: %s", version)
+    logger.info("发布完成时间: %s", deploy_completed_at)
     logger.info("=" * 60)
 
     return {
@@ -258,6 +318,7 @@ def run_full_deploy(version: str, previous_version: str = "",
         "release_id": record.id,
         "version": version,
         "status": "deployed",
+        "deployed_at": deploy_completed_at,
         "grayscale_result": grayscale_result,
     }
 
@@ -276,6 +337,8 @@ if __name__ == "__main__":
     parser.add_argument("--grayscale-strategy", default="by_zone", help="灰度策略")
     parser.add_argument("--target-parks", nargs="*", default=[], help="目标园区")
     parser.add_argument("--auto-approve", action="store_true", help="自动审批(演示模式)")
+    parser.add_argument("--sample-data", default=None, help="前置校验样例数据文件路径")
+    parser.add_argument("--demo-mode", action="store_true", help="演示模式(灰度监控间隔缩短)")
 
     args = parser.parse_args()
 
@@ -290,6 +353,8 @@ if __name__ == "__main__":
         grayscale_strategy=args.grayscale_strategy,
         target_parks=args.target_parks,
         auto_approve=args.auto_approve,
+        sample_data_path=args.sample_data,
+        demo_mode=args.demo_mode,
     )
 
     print("\n发布结果:")

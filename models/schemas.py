@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Dict
 import json
 import uuid
 
@@ -67,15 +67,29 @@ class PreCheckItem:
     critical: bool = True
     fix_suggestion: str = ""
     checked_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    sample_size: Optional[int] = None
+    period: Optional[str] = None
+    trend: Optional[str] = None
+    extra_info: Optional[Dict] = None
+    raw_data: Optional[Dict] = None
 
     @property
     def is_pass(self) -> bool:
         return self.status == CheckResultStatus.PASS
 
+    @property
+    def passed(self) -> bool:
+        return self.status == CheckResultStatus.PASS
+
+    @property
+    def current_value(self) -> float:
+        return self.actual_value
 
     def to_dict(self) -> dict:
         d = asdict(self)
         d["status"] = self.status.value
+        d["passed"] = self.passed
+        d["current_value"] = self.actual_value
         return d
 
 

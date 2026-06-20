@@ -30,6 +30,8 @@ def cmd_deploy(args):
         grayscale_strategy=args.grayscale_strategy,
         target_parks=args.target_parks or [],
         auto_approve=args.auto_approve,
+        sample_data_path=args.sample_data,
+        demo_mode=args.demo_mode,
     )
     return result
 
@@ -37,7 +39,7 @@ def cmd_deploy(args):
 def cmd_approve(args):
     from core.approval import ApprovalEngine
     from utils.db import get_release_record, save_release_record
-    from models.schemas import ApprovalStatus, ReleaseStatus
+    from models.schemas import ApprovalStatus, ReleaseStatus, ReleaseType
 
     init_database()
     record = get_release_record(args.release_id)
@@ -46,6 +48,12 @@ def cmd_approve(args):
 
     if record.get("status") not in ["pending_approval"]:
         return {"error": f"发布单状态不是待审批: {record.get('status')}"}
+
+    release_type_value = record.get("release_type", "NORMAL")
+    try:
+        release_type = ReleaseType(release_type_value)
+    except (ValueError, TypeError):
+        release_type = ReleaseType.NORMAL
 
     approval_records_data = record.get("approval_records", [])
     from models.schemas import ApprovalRecord
@@ -73,6 +81,7 @@ def cmd_approve(args):
         approver_id=args.approver_id,
         approved=args.approve,
         comment=args.comment or "",
+        release_type=release_type,
     )
 
     record["approval_records"] = [r.to_dict() for r in approval_records]
@@ -124,7 +133,10 @@ def cmd_report(args):
     from scripts.weekly_report import generate_weekly_report, query_and_export
 
     if args.sub_command == "generate":
-        return generate_weekly_report(week_start=args.week_start, week_end=args.week_end)
+        result = generate_weekly_report(
+            week_start=args.week_start, week_end=args.week_end,
+        )
+        return result
     elif args.sub_command == "query":
         return query_and_export(
             query_type=args.query_type, format=args.format,
@@ -164,11 +176,12 @@ def main():
         epilog="""
 示例:
   python main.py deploy --version 2.1.0 --previous-version 2.0.0 --branch release/2.1 --auto-approve
+  python main.py deploy --version 2.1.0 --sample-data ./sample_data/precheck_healthy.json --demo-mode --auto-approve
   python main.py approve --release-id abc123 --approver-id pm001 --approve --comment "同意"
   python main.py rollback --release-id abc123 --version 2.1.0 --previous-version 2.0.0
   python main.py drill --target-parks PK-EAST-03
   python main.py report generate
-  python main.py report query --type release --format json
+  python main.py report query --query-type release --format json
   python main.py status --release-id abc123
         """,
     )
@@ -187,6 +200,8 @@ def main():
     deploy_parser.add_argument("--grayscale-strategy", default="by_zone", help="灰度策略")
     deploy_parser.add_argument("--target-parks", nargs="*", default=[], help="目标园区")
     deploy_parser.add_argument("--auto-approve", action="store_true", help="自动审批(演示模式)")
+    deploy_parser.add_argument("--sample-data", default=None, help="前置校验样例数据文件路径")
+    deploy_parser.add_argument("--demo-mode", action="store_true", help="演示模式(灰度监控间隔缩短)")
 
     # approve
     approve_parser = subparsers.add_parser("approve", help="审批发布申请")
